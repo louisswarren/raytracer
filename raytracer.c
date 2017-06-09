@@ -2,67 +2,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define EPSILON 0.001
-#define print(X) printf("%f\n", X)
+#include "point.h"
+#include "geometry.h"
 
-typedef struct {
-	double x, y, z;
-} Point;
-
-Point pointsub(Point a, Point b)
-{
-	Point c = {a.x - b.x, a.y - b.y, a.z - b.z};
-	return c;
-}
-
-double dot(Point a, Point b)
-{
-	return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-int print_point(Point a)
+int
+print_point(Point a)
 {
 	return printf("(%f, %f, %f)\n", a.x, a.y, a.z);
 }
 
-typedef struct {
-	Point center;
-	double width, height, depth;
-} Box;
-
-typedef struct {
-	Point center;
-	double radius;
-} Sphere;
-
-double
-intersect_sphere(void *x, Point pos, Point dir)
-{
-	Sphere *s = x;
-	Point dist = pointsub(pos, s->center);
-	double dp = dot(dir, dist);
-	double to_rim_squared = dot(dist, dist) - s->radius * s->radius;
-	double delta = dp * dp - to_rim_squared;
-
-	// If beyond the rim
-	if (fabs(delta) < EPSILON || delta < 0) {
-		return -1;
-	}
-
-	double t1 = -dp - sqrt(delta);
-	double t2 = -dp + sqrt(delta);
-	if (fabs(t1) < EPSILON) {
-		if (t2 > 0) {
-			return t2;
-		} else {
-			t1 = -1;
-		}
-	}
-	if (fabs(t2) < EPSILON)
-		t2 = -1;
-
-	return (t1 < t2) ? t1 : t2;
-}
+#define print(X) printf("%f\n", X)
 
 typedef double intersector(void *, Point, Point);
 
@@ -70,15 +19,6 @@ typedef struct {
 	void *drawable;
 	intersector *intersect;
 } Object;
-
-
-Point
-normalise(Point a)
-{
-	double scale = sqrt(dot(a, a));
-	Point n = {a.x / scale, a.y / scale, a.z / scale};
-	return n;
-}
 
 double
 trace(Object *scene, size_t n, Point pos, Point dir, size_t *closest)
