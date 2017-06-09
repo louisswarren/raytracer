@@ -35,8 +35,9 @@ typedef struct {
 } Sphere;
 
 double
-intersect_sphere(Sphere *s, Point pos, Point dir)
+intersect_sphere(void *x, Point pos, Point dir)
 {
+	Sphere *s = x;
 	Point dist = pointsub(pos, s->center);
 	double dp = dot(dir, dist);
 	double to_rim_squared = dot(dist, dist) - s->radius * s->radius;
@@ -49,11 +50,13 @@ intersect_sphere(Sphere *s, Point pos, Point dir)
 
 	double t1 = -dp - sqrt(delta);
 	double t2 = -dp + sqrt(delta);
-	if (fabs(t1) < EPSILON)
-		if (t2 > 0)
+	if (fabs(t1) < EPSILON) {
+		if (t2 > 0) {
 			return t2;
-		else
+		} else {
 			t1 = -1;
+		}
+	}
 	if (fabs(t2) < EPSILON)
 		t2 = -1;
 
@@ -67,6 +70,13 @@ typedef struct {
 } Object;
 
 
+Point normalise(Point a)
+{
+	double scale = sqrt(dot(a, a));
+	Point n = {a.x / scale, a.y / scale, a.z / scale};
+	return n;
+}
+
 void
 draw(Object *scene, size_t numobjects)
 {
@@ -75,20 +85,20 @@ draw(Object *scene, size_t numobjects)
 		return;
 	}
 	Point eye = {0, 0, -1};
-	int halfres = 1;
+	int halfres = 25;
 	for (int w = -halfres; w <= halfres; w++) {
 		for (int h = -halfres; h <= halfres; h++) {
 			double x = (double) w / halfres;
 			double y = (double) h / halfres;
 			Point pix = {x, y, 0};
+			Point dir = normalise(pointsub(pix, eye));
 			void *drawable = scene[0].drawable;
 			double (*intersect)(void *, Point, Point) = scene[0].intersect;
-			double t = intersect(drawable, eye, pix);
+			double t = intersect(drawable, eye, dir);
 			if (t > 0) {
 				printf("#");
 			} else {
-				//printf(".");
-				printf("%f\n", t);
+				printf(".");
 			}
 		}
 		printf("\n");
@@ -100,7 +110,7 @@ draw(Object *scene, size_t numobjects)
 int
 main(void)
 {
-	Sphere s = {{0, 0, 10}, 20};
+	Sphere s = {{0, 0, 1}, 1};
 	Object scene[] = {{&s, &intersect_sphere}};
 	draw(scene, 1);
 }
