@@ -3,7 +3,7 @@
 #include "point.h"
 #include "geometry.h"
 
-static const epsilon = 0.001;
+static const double epsilon = 0.001;
 
 double
 intersect_sphere(void *x, Point pos, Point dir)
