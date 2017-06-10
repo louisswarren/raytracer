@@ -1,6 +1,6 @@
 .PHONY: run
 run: raytracer
-	./raytracer
+	./raytracer && feh output.bmp -Z --force-aliasing
 
 .PHONY: clean
 clean:

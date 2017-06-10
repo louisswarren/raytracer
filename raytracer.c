@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #include "point.h"
 #include "geometry.h"
@@ -48,8 +49,8 @@ void
 draw(Object *scene, size_t n)
 {
 	Point eye = {0, 0, -1};
-	int halfres = 25;
-	char frame[7500];
+	int halfres = 200;
+	rgb24 frame[160000];
 	size_t closest;
 	for (int w = -halfres; w < halfres; w++) {
 		for (int h = -halfres; h < halfres; h++) {
@@ -59,18 +60,15 @@ draw(Object *scene, size_t n)
 			Point dir = normalise(pointsub(pix, eye));
 			size_t pt = (halfres + h) * halfres * 2 + (halfres + w);
 			if (trace(scene, n, eye, dir, &closest) > 0) {
-				frame[pt] = 127;
-				frame[pt + 1] = 127;
-				frame[pt + 2] = 127;
-				printf("#");
+				frame[pt].red = 255;
+				frame[pt].green = 255;
+				frame[pt].blue = 255;
 			} else {
-				frame[pt] = 0;
-				frame[pt + 1] = 0;
-				frame[pt + 2] = 0;
-				printf(".");
+				frame[pt].red = 0;
+				frame[pt].green = 0;
+				frame[pt].blue = 0;
 			}
 		}
-		printf("\n");
 	}
 	FILE *f = fopen("output.bmp", "wb");
 	writebitmap(f, frame, halfres * 2, halfres * 2);

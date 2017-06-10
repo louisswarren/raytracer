@@ -46,16 +46,18 @@ int writeinfoheader(FILE *f, size_t width, size_t height)
 	return 40;
 }
 
-int writebitmap(FILE *f, char img[], size_t width, size_t height)
+int writebitmap(FILE *f, rgb24 img[], size_t width, size_t height)
 {
 	uint32_t fsize = 14 + 40 + width * height * 3;
+	char pad[4] = {0, 0, 0, 0};
+
 	writefileheader(f, fsize);
 	writeinfoheader(f, width, height);
 
-	char pad[4] = {0, 0, 0, 0};
+
 	size_t pad_len = (width % 4) ? 4 - (width % 4) : 0;
 	for (int r = height - 1; r >= 0; r--) {
-		fwrite(img + width * r * 3, 3, width, f);
+		fwrite(img + width * r, 3, width, f);
 		if (pad_len)
 			fwrite(pad, 1, pad_len, f);
 	}
