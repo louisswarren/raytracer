@@ -1,9 +1,12 @@
+#define _POSIX_C_SOURCE 200809L
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "point.h"
 #include "geometry.h"
+
+#include "writebmp.h"
 
 int
 print_point(Point a)
@@ -46,22 +49,32 @@ draw(Object *scene, size_t n)
 {
 	Point eye = {0, 0, -1};
 	int halfres = 25;
+	char frame[7500];
 	size_t closest;
-	for (int w = -halfres; w <= halfres; w++) {
-		for (int h = -halfres; h <= halfres; h++) {
+	for (int w = -halfres; w < halfres; w++) {
+		for (int h = -halfres; h < halfres; h++) {
 			double x = (double) w / halfres;
 			double y = (double) h / halfres;
 			Point pix = {x, y, 0};
 			Point dir = normalise(pointsub(pix, eye));
+			size_t pt = (halfres + h) * halfres * 2 + (halfres + w);
 			if (trace(scene, n, eye, dir, &closest) > 0) {
+				frame[pt] = 127;
+				frame[pt + 1] = 127;
+				frame[pt + 2] = 127;
 				printf("#");
 			} else {
+				frame[pt] = 0;
+				frame[pt + 1] = 0;
+				frame[pt + 2] = 0;
 				printf(".");
 			}
 		}
 		printf("\n");
 	}
-
+	FILE *f = fopen("output.bmp", "wb");
+	writebitmap(f, frame, halfres * 2, halfres * 2);
+	fclose(f);
 }
 
 
