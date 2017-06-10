@@ -10,7 +10,7 @@ int writefileheader(FILE *f, size_t fsize)
 	uint32_t bfSize      = fsize;
 	uint16_t bfReserved1 = 0;
 	uint16_t bfReserved2 = 0;
-	uint32_t bfOffBits   = 54;
+	uint32_t bfOffBits   = 56;
 	fwrite(bfType,       1, 2, f);
 	fwrite(&bfSize,      4, 1, f);
 	fwrite(&bfReserved1, 2, 1, f);
@@ -53,7 +53,7 @@ int writebitmap(FILE *f, rgb24 img[], size_t width, size_t height)
 
 	writefileheader(f, fsize);
 	writeinfoheader(f, width, height);
-
+	fwrite(pad, 1, 2, f);
 
 	size_t pad_len = (width % 4) ? 4 - (width % 4) : 0;
 	for (int r = height - 1; r >= 0; r--) {
