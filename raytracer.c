@@ -53,7 +53,7 @@ trace(Object *scene, size_t n, Vector pos, Vector dir, size_t *closest)
 void
 draw(Object *scene, size_t n)
 {
-	Vector eye = {0, 0, -1};
+	Vector eye = {0, 0, -6};
 	int halfres = 200;
 	Color frame[160000];
 	size_t closest;
@@ -61,7 +61,7 @@ draw(Object *scene, size_t n)
 		for (int h = -halfres; h < halfres; h++) {
 			double x = (double) w / halfres;
 			double y = (double) h / halfres;
-			Vector pix = {x, y, 0};
+			Vector pix = {x, y, -5};
 			Vector dir = normalise(vectorsub(pix, eye));
 			size_t pt = (halfres - h - 1) * halfres * 2 + (halfres + w);
 			if (trace(scene, n, eye, dir, &closest) > 0) {
@@ -79,18 +79,33 @@ draw(Object *scene, size_t n)
 	fclose(f);
 }
 
-
 int
 main(void)
 {
+	Color wallcolor = {1, 0.8, 0.4};
+	Color floorcolor = {0.3, 0.3, 0.35};
 	Sphere s1 = {COLOR_RED, {0, 0, 10}, 2};
 	Sphere s2 = {COLOR_BLUE, {4, 4, 5}, 1};
-	Plane floor = {COLOR_GREEN, {-10, -5, -10}, {20, 0, 0}, {0, 0, 500}};
+
+	float d = 10;
+	float h = 2;
+	float r = d - h;
+
+	Plane wall_back =   {wallcolor,  {0, 0, d*2}, {1, 0, 0}, {0, 1, 0}};
+	Plane wall_left =   {COLOR_RED,  {-d, 0, 0},  {0, 0, 1}, {0, 1, 0}};
+	Plane wall_right =  {COLOR_BLUE, {d, 0, 0},   {0, 0, 1}, {0, 1, 0}};
+	Plane wall_bottom = {floorcolor, {0, -d, 0},  {1, 0, 0}, {0, 0, 1}};
+	Plane wall_top =    {floorcolor, {-h, d, r},  {h, 0, 0}, {0, 0, h}};
+
 	Object scene[] = {
 		{&s1, &intersect_sphere},
 		{&s2, &intersect_sphere},
-		{&floor, &intersect_plane},
+		{&wall_back,   &intersect_infinite_plane},
+		{&wall_left,   &intersect_infinite_plane},
+		{&wall_right,  &intersect_infinite_plane},
+		{&wall_bottom, &intersect_infinite_plane},
+		{&wall_top,    &intersect_coplane},
 	};
-	draw(scene, 3);
+	draw(scene, 7);
 }
 

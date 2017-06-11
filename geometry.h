@@ -25,4 +25,9 @@ typedef struct {
 double intersect_sphere(void *x, Vector pos, Vector dir);
 
 double intersect_plane(void *x, Vector pos, Vector dir);
+
+double intersect_coplane(void *x, Vector pos, Vector dir);
+
+double intersect_infinite_plane(void *x, Vector pos, Vector dir);
+
 Vector normal_plane(Plane *p, Vector pos);
