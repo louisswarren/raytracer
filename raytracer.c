@@ -5,8 +5,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "color.h"
 #include "vector.h"
+#include "color.h"
 #include "geometry.h"
 #include "writebmp.h"
 
@@ -30,7 +30,7 @@ typedef struct {
 } Object;
 
 double
-trace(Object *scene, size_t n, Vector pos, Vector dir, size_t *closest)
+find_closest(Object *scene, size_t n, Vector pos, Vector dir, size_t *closest)
 {
 	void *drawable;
 	intersector *intersect;
@@ -50,13 +50,27 @@ trace(Object *scene, size_t n, Vector pos, Vector dir, size_t *closest)
 	return min_t;
 }
 
+Color trace(Object *scene, size_t n, Vector pos, Vector dir)
+{
+	Color color = {0, 0, 0};
+	size_t closest;
+	if (find_closest(scene, n, pos, dir, &closest) > 0) {
+		color = ((Shape *)scene[closest].drawable)->color;
+	}
+	return color;
+}
+
 void
 draw(Object *scene, size_t n)
 {
 	Vector eye = {0, 0, -6};
+	Vector light = {0, 0, 100};
 	int halfres = 200;
-	Color frame[160000];
-	size_t closest;
+	Color *frame = malloc(halfres * halfres * 4 * sizeof(Color));
+	if (!frame) {
+		puts("Out of memory");
+		return;
+	}
 	for (int w = -halfres; w < halfres; w++) {
 		for (int h = -halfres; h < halfres; h++) {
 			double x = (double) w / halfres;
@@ -64,19 +78,13 @@ draw(Object *scene, size_t n)
 			Vector pix = {x, y, -5};
 			Vector dir = normalise(vectorsub(pix, eye));
 			size_t pt = (halfres - h - 1) * halfres * 2 + (halfres + w);
-			if (trace(scene, n, eye, dir, &closest) > 0) {
-				Color objcolor = ((Shape *)scene[closest].drawable)->color;
-				frame[pt] = objcolor;
-			} else {
-				frame[pt].red = 0;
-				frame[pt].green = 0;
-				frame[pt].blue = 0;
-			}
+			frame[pt] = trace(scene, n, eye, dir);
 		}
 	}
 	FILE *f = fopen("output.bmp", "wb");
 	writebitmap(f, frame, halfres * 2, halfres * 2);
 	fclose(f);
+	free(frame);
 }
 
 int
@@ -95,7 +103,8 @@ main(void)
 	Plane wall_left =   {COLOR_RED,  {-d, 0, 0},  {0, 0, 1}, {0, 1, 0}};
 	Plane wall_right =  {COLOR_BLUE, {d, 0, 0},   {0, 0, 1}, {0, 1, 0}};
 	Plane wall_bottom = {floorcolor, {0, -d, 0},  {1, 0, 0}, {0, 0, 1}};
-	Plane wall_top =    {floorcolor, {-h, d, r},  {h, 0, 0}, {0, 0, h}};
+
+	Plane wall_top =    {floorcolor, {-h, d, r},  {h*2, 0, 0}, {0, 0, h*2}};
 
 	Object scene[] = {
 		{&s1, &intersect_sphere},
