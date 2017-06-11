@@ -23,10 +23,12 @@ print_vector(Vector a)
 #define print(X) printf("%f\n", X)
 
 typedef double intersector(void *, Vector, Vector);
+typedef Vector normal_func(void *, Vector);
 
 typedef struct {
 	void *drawable;
 	intersector *intersect;
+	normal_func *normal;
 } Object;
 
 double
@@ -52,19 +54,30 @@ find_closest(Object *scene, size_t n, Vector pos, Vector dir, size_t *closest)
 
 Color trace(Object *scene, size_t n, Vector pos, Vector dir)
 {
+	Color ambient = {0.2, 0.2, 0.2};
 	Color color = {0, 0, 0};
-	size_t closest;
-	if (find_closest(scene, n, pos, dir, &closest) > 0) {
-		color = ((Shape *)scene[closest].drawable)->color;
-	}
-	return color;
+	Vector light = {0, 100, 0};
+	size_t closest_index;
+	Object *closest;
+	Shape *shape;
+	double t = find_closest(scene, n, pos, dir, &closest_index);
+	if (t <= 0)
+		return color;
+
+	Vector q = vectorsub(pos, vectorscale(dir, -t));
+	closest = &scene[closest_index];
+	shape = closest->drawable;
+
+	color = shape->color;
+	Vector objn = closest->normal(closest->drawable, q);
+	double diffuse = dot(normalise(light), objn);
+	return phong(color, ambient, diffuse, 0);
 }
 
 void
 draw(Object *scene, size_t n)
 {
 	Vector eye = {0, 0, -6};
-	Vector light = {0, 0, 100};
 	int halfres = 200;
 	Color *frame = malloc(halfres * halfres * 4 * sizeof(Color));
 	if (!frame) {
@@ -107,13 +120,13 @@ main(void)
 	Plane wall_top =    {floorcolor, {-h, d, r},  {h*2, 0, 0}, {0, 0, h*2}};
 
 	Object scene[] = {
-		{&s1, &intersect_sphere},
-		{&s2, &intersect_sphere},
-		{&wall_back,   &intersect_infinite_plane},
-		{&wall_left,   &intersect_infinite_plane},
-		{&wall_right,  &intersect_infinite_plane},
-		{&wall_bottom, &intersect_infinite_plane},
-		{&wall_top,    &intersect_coplane},
+		{&s1, &intersect_sphere, &normal_sphere},
+		{&s2, &intersect_sphere, &normal_sphere},
+		{&wall_back,   &intersect_infinite_plane, &normal_plane},
+		{&wall_left,   &intersect_infinite_plane, &normal_plane},
+		{&wall_right,  &intersect_infinite_plane, &normal_plane},
+		{&wall_bottom, &intersect_infinite_plane, &normal_plane},
+		{&wall_top,    &intersect_coplane, &normal_plane},
 	};
 	draw(scene, 7);
 }

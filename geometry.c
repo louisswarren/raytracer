@@ -35,6 +35,13 @@ intersect_sphere(void *x, Vector pos, Vector dir)
 	return (t1 < t2) ? t1 : t2;
 }
 
+Vector
+normal_sphere(void *x, Vector pos)
+{
+	Sphere *s = x;
+	return normalise(vectorsub(pos, s->center));
+}
+
 double
 intersect_infinite_plane(void *x, Vector pos, Vector dir)
 {
@@ -82,7 +89,8 @@ intersect_coplane(void *x, Vector pos, Vector dir)
 	return -1;
 }
 
-Vector normal_plane(Plane *p, Vector pos)
+Vector normal_plane(void *x, Vector pos)
 {
+	Plane *p = x;
 	return normalise(cross(p->dir1, p->dir2));
 }
