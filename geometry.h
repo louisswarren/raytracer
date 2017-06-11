@@ -1,13 +1,13 @@
 typedef struct {
-	Point center;
+	Vector center;
 	double width, height, depth;
 } Box;
 
 typedef struct {
-	Point center;
+	Vector center;
 	double radius;
 } Sphere;
 
 
-double intersect_box(void *x, Point pos, Point dir);
-double intersect_sphere(void *x, Point pos, Point dir);
+double intersect_box(void *x, Vector pos, Vector dir);
+double intersect_sphere(void *x, Vector pos, Vector dir);

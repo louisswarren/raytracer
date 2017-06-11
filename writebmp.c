@@ -4,13 +4,14 @@
 
 #include "writebmp.h"
 
-int writefileheader(FILE *f, size_t fsize)
+int
+writefileheader(FILE *f, size_t fsize)
 {
 	char     bfType[2]   = {'B', 'M'};
 	uint32_t bfSize      = fsize;
 	uint16_t bfReserved1 = 0;
 	uint16_t bfReserved2 = 0;
-	uint32_t bfOffBits   = 56;
+	uint32_t bfOffBits   = 54;
 	fwrite(bfType,       1, 2, f);
 	fwrite(&bfSize,      4, 1, f);
 	fwrite(&bfReserved1, 2, 1, f);
@@ -19,7 +20,8 @@ int writefileheader(FILE *f, size_t fsize)
 	return 14;
 }
 
-int writeinfoheader(FILE *f, size_t width, size_t height)
+int
+writeinfoheader(FILE *f, size_t width, size_t height)
 {
 	uint32_t biSize          = 40;
 	uint32_t biWidth         = width;
@@ -46,16 +48,16 @@ int writeinfoheader(FILE *f, size_t width, size_t height)
 	return 40;
 }
 
-int writebitmap(FILE *f, rgb24 img[], size_t width, size_t height)
+int
+writebitmap(FILE *f, rgb24 img[], size_t width, size_t height)
 {
 	uint32_t fsize = 14 + 40 + width * height * 3;
 	char pad[4] = {0, 0, 0, 0};
+	size_t pad_len = (width % 4) ? 4 - (width % 4) : 0;
 
 	writefileheader(f, fsize);
 	writeinfoheader(f, width, height);
-	fwrite(pad, 1, 2, f);
 
-	size_t pad_len = (width % 4) ? 4 - (width % 4) : 0;
 	for (int r = height - 1; r >= 0; r--) {
 		fwrite(img + width * r, 3, width, f);
 		if (pad_len)

@@ -9,16 +9,16 @@ clean:
 CC = gcc
 CFLAGS = -lm -std=c99 -pedantic
 
-raytracer: raytracer.o geometry.o point.o writebmp.o
+raytracer: raytracer.o geometry.o vector.o writebmp.o
 	$(CC) $(CFLAGS) -o $@ $^
 
-raytracer.o: raytracer.c geometry.h point.h writebmp.h
+raytracer.o: raytracer.c geometry.h vector.h writebmp.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-geometry.o: geometry.c geometry.h point.h
+geometry.o: geometry.c geometry.h vector.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-point.o: point.c point.h
+vector.o: vector.c vector.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 writebmp.o: writebmp.c writebmp.h

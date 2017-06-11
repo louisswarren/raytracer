@@ -4,20 +4,20 @@
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "point.h"
+#include "vector.h"
 #include "geometry.h"
 
 #include "writebmp.h"
 
 int
-print_point(Point a)
+print_vector(Vector a)
 {
 	return printf("(%f, %f, %f)\n", a.x, a.y, a.z);
 }
 
 #define print(X) printf("%f\n", X)
 
-typedef double intersector(void *, Point, Point);
+typedef double intersector(void *, Vector, Vector);
 
 typedef struct {
 	void *drawable;
@@ -25,7 +25,7 @@ typedef struct {
 } Object;
 
 double
-trace(Object *scene, size_t n, Point pos, Point dir, size_t *closest)
+trace(Object *scene, size_t n, Vector pos, Vector dir, size_t *closest)
 {
 	void *drawable;
 	intersector *intersect;
@@ -48,7 +48,7 @@ trace(Object *scene, size_t n, Point pos, Point dir, size_t *closest)
 void
 draw(Object *scene, size_t n)
 {
-	Point eye = {0, 0, -1};
+	Vector eye = {0, 0, -1};
 	int halfres = 200;
 	rgb24 frame[160000];
 	size_t closest;
@@ -56,12 +56,12 @@ draw(Object *scene, size_t n)
 		for (int h = -halfres; h < halfres; h++) {
 			double x = (double) w / halfres;
 			double y = (double) h / halfres;
-			Point pix = {x, y, 0};
-			Point dir = normalise(pointsub(pix, eye));
+			Vector pix = {x, y, 0};
+			Vector dir = normalise(vectorsub(pix, eye));
 			size_t pt = (halfres + h) * halfres * 2 + (halfres + w);
 			if (trace(scene, n, eye, dir, &closest) > 0) {
 				frame[pt].red = 255;
-				frame[pt].green = 255;
+				frame[pt].green = 0;
 				frame[pt].blue = 255;
 			} else {
 				frame[pt].red = 0;

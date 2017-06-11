@@ -1,15 +1,15 @@
 #include <math.h>
 
-#include "point.h"
+#include "vector.h"
 #include "geometry.h"
 
 static const double epsilon = 0.001;
 
 double
-intersect_sphere(void *x, Point pos, Point dir)
+intersect_sphere(void *x, Vector pos, Vector dir)
 {
 	Sphere *s = x;
-	Point dist = pointsub(pos, s->center);
+	Vector dist = vectorsub(pos, s->center);
 	double dp = dot(dir, dist);
 	double to_rim_squared = dot(dist, dist) - s->radius * s->radius;
 	double delta = dp * dp - to_rim_squared;
@@ -33,4 +33,3 @@ intersect_sphere(void *x, Point pos, Point dir)
 
 	return (t1 < t2) ? t1 : t2;
 }
-
