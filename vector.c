@@ -32,8 +32,8 @@ normalise(Vector a)
 Vector
 cross(Vector a, Vector b)
 {
-	Vector r = {a.x * b.y - a.y * b.x,
-		        -a.x * b.z + a.z * b.x,
-				a.y * b.z - a.z * b.y};
+	Vector r = {a.y * b.z - a.z * b.y,
+	           -a.x * b.z + a.z * b.x,
+	            a.x * b.y - a.y * b.x};
 	return r;
 }
