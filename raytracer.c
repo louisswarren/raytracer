@@ -85,10 +85,12 @@ main(void)
 {
 	Sphere s1 = {COLOR_RED, {0, 0, 10}, 2};
 	Sphere s2 = {COLOR_BLUE, {4, 4, 5}, 1};
+	Plane floor = {COLOR_GREEN, {-10, -5, -10}, {20, 0, 0}, {0, 0, 500}};
 	Object scene[] = {
 		{&s1, &intersect_sphere},
 		{&s2, &intersect_sphere},
+		{&floor, &intersect_plane},
 	};
-	draw(scene, 2);
+	draw(scene, 3);
 }
 
