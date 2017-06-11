@@ -34,3 +34,33 @@ intersect_sphere(void *x, Vector pos, Vector dir)
 
 	return (t1 < t2) ? t1 : t2;
 }
+
+double
+intersect_plane(void *x, Vector pos, Vector dir)
+{
+	Plane *p = x;
+	Vector n = normal_plane(p, pos);
+	Vector dist = vectorsub(p->anchor, pos);
+	double dp = dot(dir, n);
+	if (fabs(dp) < epsilon)
+		return -1;
+	double t = dot(dist, n) / dp;
+	if (fabs(t) < epsilon)
+		return -1;
+	Vector hdir = vectorsub(vectorsub(pos, vectorscale(dir, -t)), p->anchor);
+
+	// Check if hdir lies within the plane using projections
+	double proj1_scale = dot(hdir, p->dir1);
+	if (proj1_scale < 0 || proj1_scale > dot(p->dir1, p->dir1))
+		return -1;
+	double proj2_scale = dot(hdir, p->dir2);
+	if (proj2_scale < 0 || proj2_scale > dot(p->dir2, p->dir2))
+		return -1;
+
+	return t;
+}
+
+Vector normal_plane(Plane *p, Vector pos)
+{
+	return normalise(cross(p->dir1, p->dir2));
+}
