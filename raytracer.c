@@ -3,11 +3,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 
+#include "color.h"
 #include "vector.h"
 #include "geometry.h"
-
 #include "writebmp.h"
+
+Color COLOR_RED = {1, 0, 0};
+Color COLOR_GREEN = {0, 1, 0};
+Color COLOR_BLUE = {0, 0, 1};
 
 int
 print_vector(Vector a)
@@ -50,7 +55,7 @@ draw(Object *scene, size_t n)
 {
 	Vector eye = {0, 0, -1};
 	int halfres = 200;
-	rgb24 frame[160000];
+	Color frame[160000];
 	size_t closest;
 	for (int w = -halfres; w < halfres; w++) {
 		for (int h = -halfres; h < halfres; h++) {
@@ -60,9 +65,7 @@ draw(Object *scene, size_t n)
 			Vector dir = normalise(vectorsub(pix, eye));
 			size_t pt = (halfres + h) * halfres * 2 + (halfres + w);
 			if (trace(scene, n, eye, dir, &closest) > 0) {
-				frame[pt].red = 255;
-				frame[pt].green = 0;
-				frame[pt].blue = 255;
+				frame[pt] = COLOR_RED;
 			} else {
 				frame[pt].red = 0;
 				frame[pt].green = 0;
@@ -79,8 +82,8 @@ draw(Object *scene, size_t n)
 int
 main(void)
 {
-	Sphere s1 = {{0, 0, 10}, 2};
-	Sphere s2 = {{4, 4, 5}, 1};
+	Sphere s1 = {COLOR_RED, {0, 0, 10}, 2};
+	Sphere s2 = {COLOR_BLUE, {4, 4, 5}, 1};
 	Object scene[] = {
 		{&s1, &intersect_sphere},
 		{&s2, &intersect_sphere},

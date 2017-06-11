@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <float.h>
 
+#include "color.h"
 #include "writebmp.h"
 
 int
@@ -49,7 +51,7 @@ writeinfoheader(FILE *f, size_t width, size_t height)
 }
 
 int
-writebitmap(FILE *f, rgb24 img[], size_t width, size_t height)
+writebitmap(FILE *f, Color img[], size_t width, size_t height)
 {
 	uint32_t fsize = 14 + 40 + width * height * 3;
 	char pad[4] = {0, 0, 0, 0};
@@ -59,9 +61,22 @@ writebitmap(FILE *f, rgb24 img[], size_t width, size_t height)
 	writeinfoheader(f, width, height);
 
 	for (int r = height - 1; r >= 0; r--) {
-		fwrite(img + width * r, 3, width, f);
+		for (size_t j = 0; j < width; j++) {
+			rgb24 pixel = color_to_rgb24(img[r * width + j]);
+			fwrite(&pixel, 3, 1, f);
+		}
 		if (pad_len)
 			fwrite(pad, 1, pad_len, f);
 	}
 	return 0;
+}
+
+rgb24
+color_to_rgb24(Color x)
+{
+	rgb24 y;
+	y.red = (x.red - DBL_EPSILON) * 256;
+	y.green = (x.green - DBL_EPSILON) * 256;
+	y.blue = (x.blue - DBL_EPSILON) * 256;
+	return y;
 }

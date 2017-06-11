@@ -1,5 +1,6 @@
 #include <math.h>
 
+#include "color.h"
 #include "vector.h"
 #include "geometry.h"
 
