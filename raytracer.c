@@ -63,7 +63,7 @@ draw(Object *scene, size_t n)
 			double y = (double) h / halfres;
 			Vector pix = {x, y, 0};
 			Vector dir = normalise(vectorsub(pix, eye));
-			size_t pt = (halfres + h) * halfres * 2 + (halfres + w);
+			size_t pt = (halfres - h - 1) * halfres * 2 + (halfres + w);
 			if (trace(scene, n, eye, dir, &closest) > 0) {
 				Color objcolor = ((Shape *)scene[closest].drawable)->color;
 				frame[pt] = objcolor;
