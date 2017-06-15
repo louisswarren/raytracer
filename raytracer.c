@@ -119,7 +119,7 @@ void draw()
 #define add_infinite_plane(C, X, Y, Z, U1, U2, U3, W1, W2, W3) \
 	scene[scene_ctr++] = \
 	(Object){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	                  &intersect_coplane, &normal_plane}
+	&intersect_coplane, &normal_plane}
 
 int main(void)
 {
