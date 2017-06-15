@@ -68,13 +68,13 @@ Color trace(Vector pos, Vector dir)
 	if (t <= 0)
 		return color;
 
-	Vector q = vectorsub(pos, vectorscale(dir, -t));
+	Vector q = vecsub(pos, vecscale(dir, -t));
 	closest = &scene[closest_index];
 	shape = closest->drawable;
 
 	color = shape->color;
 	Vector objn = closest->normal(closest->drawable, q);
-	double diffuse = dot(normalise(light), objn);
+	double diffuse = vecdot(vecnormalise(light), objn);
 	return phong(color, ambient, diffuse, 0);
 }
 
@@ -93,7 +93,7 @@ void draw()
 			double x = (double) w / halfres;
 			double y = (double) h / halfres;
 			Vector pix = {x, y, -5};
-			Vector dir = normalise(vectorsub(pix, eye));
+			Vector dir = vecnormalise(vecsub(pix, eye));
 			size_t pt = (halfres - h - 1) * halfres * 2 + (halfres + w);
 			frame[pt] = trace(eye, dir);
 		}

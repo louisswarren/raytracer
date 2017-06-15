@@ -10,9 +10,9 @@ double
 intersect_sphere(void *x, Vector pos, Vector dir)
 {
 	Sphere *s = x;
-	Vector dist = vectorsub(pos, s->center);
-	double dp = dot(dir, dist);
-	double to_rim_squared = dot(dist, dist) - s->radius * s->radius;
+	Vector dist = vecsub(pos, s->center);
+	double dp = vecdot(dir, dist);
+	double to_rim_squared = vecdot(dist, dist) - s->radius * s->radius;
 	double delta = dp * dp - to_rim_squared;
 
 	// If beyond the rim
@@ -39,7 +39,7 @@ Vector
 normal_sphere(void *x, Vector pos)
 {
 	Sphere *s = x;
-	return normalise(vectorsub(pos, s->center));
+	return vecnormalise(vecsub(pos, s->center));
 }
 
 double
@@ -47,11 +47,11 @@ intersect_infinite_plane(void *x, Vector pos, Vector dir)
 {
 	Plane *p = x;
 	Vector n = normal_plane(p, pos);
-	Vector dist = vectorsub(p->anchor, pos);
-	double dp = dot(dir, n);
+	Vector dist = vecsub(p->anchor, pos);
+	double dp = vecdot(dir, n);
 	if (fabs(dp) < epsilon)
 		return -1;
-	double t = dot(dist, n) / dp;
+	double t = vecdot(dist, n) / dp;
 	if (fabs(t) < epsilon)
 		return -1;
 	return t;
@@ -63,12 +63,12 @@ intersect_plane(void *x, Vector pos, Vector dir)
 	Plane *p = x;
 	double t = intersect_infinite_plane(p, pos, dir);
 
-	Vector hdir = vectorsub(vectorsub(pos, vectorscale(dir, -t)), p->anchor);
-	double proj1_scale = dot(hdir, p->dir1);
-	if (proj1_scale < 0 || proj1_scale > dot(p->dir1, p->dir1))
+	Vector hdir = vecsub(vecsub(pos, vecscale(dir, -t)), p->anchor);
+	double proj1_scale = vecdot(hdir, p->dir1);
+	if (proj1_scale < 0 || proj1_scale > vecdot(p->dir1, p->dir1))
 		return -1;
-	double proj2_scale = dot(hdir, p->dir2);
-	if (proj2_scale < 0 || proj2_scale > dot(p->dir2, p->dir2))
+	double proj2_scale = vecdot(hdir, p->dir2);
+	if (proj2_scale < 0 || proj2_scale > vecdot(p->dir2, p->dir2))
 		return -1;
 	return t;
 }
@@ -79,12 +79,12 @@ intersect_coplane(void *x, Vector pos, Vector dir)
 	Plane *p = x;
 	double t = intersect_infinite_plane(p, pos, dir);
 
-	Vector hdir = vectorsub(vectorsub(pos, vectorscale(dir, -t)), p->anchor);
-	double proj1_scale = dot(hdir, p->dir1);
-	if (proj1_scale < 0 || proj1_scale > dot(p->dir1, p->dir1))
+	Vector hdir = vecsub(vecsub(pos, vecscale(dir, -t)), p->anchor);
+	double proj1_scale = vecdot(hdir, p->dir1);
+	if (proj1_scale < 0 || proj1_scale > vecdot(p->dir1, p->dir1))
 		return t;
-	double proj2_scale = dot(hdir, p->dir2);
-	if (proj2_scale < 0 || proj2_scale > dot(p->dir2, p->dir2))
+	double proj2_scale = vecdot(hdir, p->dir2);
+	if (proj2_scale < 0 || proj2_scale > vecdot(p->dir2, p->dir2))
 		return t;
 	return -1;
 }
@@ -92,5 +92,5 @@ intersect_coplane(void *x, Vector pos, Vector dir)
 Vector normal_plane(void *x, Vector pos)
 {
 	Plane *p = x;
-	return normalise(cross(p->dir1, p->dir2));
+	return vecnormalise(veccross(p->dir1, p->dir2));
 }
