@@ -2,38 +2,29 @@
 
 #include "vector.h"
 
-Vector
-vectorsub(Vector a, Vector b)
+Vector vectorsub(Vector a, Vector b)
 {
-	Vector c = {a.x - b.x, a.y - b.y, a.z - b.z};
-	return c;
+	return (Vector){a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
-Vector
-vectorscale(Vector a, double s)
+Vector vectorscale(Vector a, double s)
 {
-	Vector b = {a.x * s, a.y * s, a.z * s};
-	return b;
+	return (Vector){a.x * s, a.y * s, a.z * s};
 }
 
-double
-dot(Vector a, Vector b)
+double dot(Vector a, Vector b)
 {
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-Vector
-normalise(Vector a)
+Vector normalise(Vector a)
 {
-	double scale = sqrt(dot(a, a));
-	return vectorscale(a, 1/scale);
+	return vectorscale(a, 1/sqrt(dot(a, a)));
 }
 
-Vector
-cross(Vector a, Vector b)
+Vector cross(Vector a, Vector b)
 {
-	Vector r = {a.y * b.z - a.z * b.y,
-	           -a.x * b.z + a.z * b.x,
-	            a.x * b.y - a.y * b.x};
-	return r;
+	return (Vector){a.y * b.z - a.z * b.y,
+	               -a.x * b.z + a.z * b.x,
+	                a.x * b.y - a.y * b.x};
 }
