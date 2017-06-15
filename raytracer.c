@@ -10,17 +10,6 @@
 #include "geometry.h"
 #include "writebmp.h"
 
-Color COLOR_RED = {1, 0, 0};
-Color COLOR_GREEN = {0, 1, 0};
-Color COLOR_BLUE = {0, 0, 1};
-
-int
-print_vector(Vector a)
-{
-	return printf("(%f, %f, %f)\n", a.x, a.y, a.z);
-}
-
-#define print(X) printf("%f\n", X)
 
 typedef double intersector(void *, Vector, Vector);
 typedef Vector normal_func(void *, Vector);
@@ -31,23 +20,22 @@ typedef struct {
 	normal_func *normal;
 } Object;
 
+
+static Color COLOR_RED = {1, 0, 0};
+static Color COLOR_GREEN = {0, 1, 0};
+static Color COLOR_BLUE = {0, 0, 1};
+
+
 static Object scene[100];
 static size_t scene_ctr = 0;
 
-#define add_sphere(X) \
-	scene[scene_ctr++] = (Object){&X, &intersect_sphere, &normal_sphere}
-#define add_plane(X) \
-	scene[scene_ctr++] = (Object){&X, &intersect_plane, &normal_plane}
-#define add_coplane(X) \
-	scene[scene_ctr++] = (Object){&X, &intersect_coplane, &normal_plane}
-#define add_infinite_plane(X) \
-	scene[scene_ctr++] = (Object){&X, &intersect_infinite_plane, &normal_plane}
+int print_vector(Vector a)
+{
+	return printf("(%f, %f, %f)\n", a.x, a.y, a.z);
+}
 
 
-
-
-double
-find_closest(Vector pos, Vector dir, size_t *closest)
+double find_closest(Vector pos, Vector dir, size_t *closest)
 {
 	void *drawable;
 	intersector *intersect;
@@ -66,6 +54,7 @@ find_closest(Vector pos, Vector dir, size_t *closest)
 	*closest = argmin_t;
 	return min_t;
 }
+
 
 Color trace(Vector pos, Vector dir)
 {
@@ -89,8 +78,8 @@ Color trace(Vector pos, Vector dir)
 	return phong(color, ambient, diffuse, 0);
 }
 
-void
-draw()
+
+void draw()
 {
 	Vector eye = {0, 0, -6};
 	int halfres = 200;
@@ -115,33 +104,41 @@ draw()
 	free(frame);
 }
 
-int
-main(void)
+
+#define add_sphere(C, X, Y, Z, R) scene[scene_ctr++] = \
+	(Object){&(Sphere){C, {X, Y, Z}, R}, &intersect_sphere, &normal_sphere}
+
+#define add_plane(C, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
+	(Object){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
+	&intersect_plane, &normal_plane}
+
+#define add_coplane(C, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
+	(Object){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
+	&intersect_coplane, &normal_plane}
+
+#define add_infinite_plane(C, X, Y, Z, U1, U2, U3, W1, W2, W3) \
+	scene[scene_ctr++] = \
+	(Object){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
+	                  &intersect_coplane, &normal_plane}
+
+int main(void)
 {
 	Color wallcolor = {1, 0.8, 0.4};
 	Color floorcolor = {0.3, 0.3, 0.35};
 
-	Sphere s1 = {COLOR_RED, {0, 0, 10}, 2};
-	Sphere s2 = {COLOR_BLUE, {4, 4, 5}, 1};
-	add_sphere(s1);
-	add_sphere(s2);
+	add_sphere(COLOR_RED,     0, 0, 10,    2);
+	add_sphere(COLOR_BLUE,    4, 4, 5,     1);
 
 	float d = 10;
 	float h = 2;
 	float r = d - h;
 
-	Plane wall_back =   {wallcolor,  {0, 0, d*2}, {1, 0, 0}, {0, 1, 0}};
-	Plane wall_left =   {COLOR_RED,  {-d, 0, 0},  {0, 0, 1}, {0, 1, 0}};
-	Plane wall_right =  {COLOR_BLUE, {d, 0, 0},   {0, 0, 1}, {0, 1, 0}};
-	Plane wall_bottom = {floorcolor, {0, -d, 0},  {1, 0, 0}, {0, 0, 1}};
-	add_infinite_plane(wall_back);
-	add_infinite_plane(wall_left);
-	add_infinite_plane(wall_right);
-	add_infinite_plane(wall_bottom);
+	add_infinite_plane(wallcolor,     0,  0, d*2,    1, 0, 0,    0, 1, 0);
+	add_infinite_plane(COLOR_RED,    -d,  0,   0,    0, 0, 1,    0, 1, 0);
+	add_infinite_plane(COLOR_BLUE,    d,  0,   0,    0, 0, 1,    0, 1, 0);
+	add_infinite_plane(floorcolor,    0, -d,   0,    1, 0, 0,    0, 0, 1);
 
-	Plane wall_top =    {floorcolor, {-h, d, r},  {h*2, 0, 0}, {0, 0, h*2}};
-	add_coplane(wall_top);
+	add_coplane(floorcolor,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
 
 	draw();
 }
-
