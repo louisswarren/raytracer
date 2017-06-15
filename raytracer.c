@@ -58,7 +58,7 @@ double find_closest(Vector pos, Vector dir, size_t *closest)
 
 Color trace(Vector pos, Vector dir)
 {
-	Color ambient = {0.2, 0.2, 0.2};
+	Color ambient = {0.4, 0.4, 0.4};
 	Color color = {0, 0, 0};
 	Vector light = {0, 100, 0};
 	size_t closest_index;
@@ -74,7 +74,7 @@ Color trace(Vector pos, Vector dir)
 
 	color = shape->color;
 	Vector objn = closest->normal(closest->drawable, q);
-	double diffuse = vecdot(vecnormalise(light), objn);
+	double diffuse = vecdot(vecnormalise(vecsub(light, q)), objn);
 	return phong(color, ambient, diffuse, 0);
 }
 
