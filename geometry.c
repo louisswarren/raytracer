@@ -6,8 +6,7 @@
 
 static const double epsilon = 0.001;
 
-double
-intersect_sphere(void *x, Vector pos, Vector dir)
+double intersect_sphere(void *x, Vector pos, Vector dir)
 {
 	Sphere *s = x;
 	Vector dist = vecsub(pos, s->center);
@@ -35,15 +34,13 @@ intersect_sphere(void *x, Vector pos, Vector dir)
 	return (t1 < t2) ? t1 : t2;
 }
 
-Vector
-normal_sphere(void *x, Vector pos)
+Vector normal_sphere(void *x, Vector pos)
 {
 	Sphere *s = x;
 	return vecnormalise(vecsub(pos, s->center));
 }
 
-double
-intersect_infinite_plane(void *x, Vector pos, Vector dir)
+double intersect_infinite_plane(void *x, Vector pos, Vector dir)
 {
 	Plane *p = x;
 	Vector n = normal_plane(p, pos);
@@ -57,8 +54,7 @@ intersect_infinite_plane(void *x, Vector pos, Vector dir)
 	return t;
 }
 
-double
-intersect_plane(void *x, Vector pos, Vector dir)
+double intersect_plane(void *x, Vector pos, Vector dir)
 {
 	Plane *p = x;
 	double t = intersect_infinite_plane(p, pos, dir);
@@ -73,8 +69,7 @@ intersect_plane(void *x, Vector pos, Vector dir)
 	return t;
 }
 
-double
-intersect_coplane(void *x, Vector pos, Vector dir)
+double intersect_coplane(void *x, Vector pos, Vector dir)
 {
 	Plane *p = x;
 	double t = intersect_infinite_plane(p, pos, dir);

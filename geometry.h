@@ -4,6 +4,12 @@ typedef struct {
 
 typedef struct {
 	Color color;
+	Vector center;
+	double radius;
+} Sphere;
+
+typedef struct {
+	Color color;
 	Vector anchor;
 	Vector dir1, dir2;
 } Plane;
@@ -15,16 +21,11 @@ typedef struct {
 	double width, height, depth;
 } Box;
 
-typedef struct {
-	Color color;
-	Vector center;
-	double radius;
-} Sphere;
-
 
 double intersect_sphere(void *x, Vector pos, Vector dir);
 
 Vector normal_sphere(void *x, Vector pos);
+
 
 double intersect_plane(void *x, Vector pos, Vector dir);
 

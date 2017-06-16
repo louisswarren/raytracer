@@ -6,8 +6,11 @@
 #include "color.h"
 #include "writebmp.h"
 
-int
-writefileheader(FILE *f, size_t fsize)
+typedef struct {
+	uint8_t blue, green, red;
+} bmppix;
+
+static int writefileheader(FILE *f, size_t fsize)
 {
 	char     bfType[2]   = {'B', 'M'};
 	uint32_t bfSize      = fsize;
@@ -22,8 +25,7 @@ writefileheader(FILE *f, size_t fsize)
 	return 14;
 }
 
-int
-writeinfoheader(FILE *f, size_t width, size_t height)
+static int writeinfoheader(FILE *f, size_t width, size_t height)
 {
 	uint32_t biSize          = 40;
 	uint32_t biWidth         = width;
@@ -50,8 +52,16 @@ writeinfoheader(FILE *f, size_t width, size_t height)
 	return 40;
 }
 
-int
-writebitmap(FILE *f, Color img[], size_t width, size_t height)
+static bmppix color_to_bmppix(Color x)
+{
+	bmppix y;
+	y.red   = (x.red   - DBL_EPSILON) * 256;
+	y.green = (x.green - DBL_EPSILON) * 256;
+	y.blue  = (x.blue  - DBL_EPSILON) * 256;
+	return y;
+}
+
+int writebitmap(FILE *f, Color img[], size_t width, size_t height)
 {
 	uint32_t fsize = 14 + 40 + width * height * 3;
 	char pad[4] = {0, 0, 0, 0};
@@ -62,21 +72,11 @@ writebitmap(FILE *f, Color img[], size_t width, size_t height)
 
 	for (int r = height - 1; r >= 0; r--) {
 		for (size_t j = 0; j < width; j++) {
-			rgb24 pixel = color_to_rgb24(img[r * width + j]);
+			bmppix pixel = color_to_bmppix(img[r * width + j]);
 			fwrite(&pixel, 3, 1, f);
 		}
 		if (pad_len)
 			fwrite(pad, 1, pad_len, f);
 	}
 	return 0;
-}
-
-rgb24
-color_to_rgb24(Color x)
-{
-	rgb24 y;
-	y.red = (x.red - DBL_EPSILON) * 256;
-	y.green = (x.green - DBL_EPSILON) * 256;
-	y.blue = (x.blue - DBL_EPSILON) * 256;
-	return y;
 }
