@@ -58,9 +58,9 @@ double find_closest(Vector pos, Vector dir, size_t *closest)
 
 Color trace(Vector pos, Vector dir)
 {
-	Color ambient = {0.4, 0.4, 0.4};
+	Color ambient = {0.2, 0.2, 0.2};
 	Color color = {0, 0, 0};
-	Vector light = {0, 100, 0};
+	Vector light = {-5, 5, 0};
 	size_t closest_index;
 	Object *closest;
 	Shape *shape;
@@ -73,9 +73,22 @@ Color trace(Vector pos, Vector dir)
 	shape = closest->drawable;
 
 	color = shape->color;
-	Vector objn = closest->normal(closest->drawable, q);
-	double diffuse = vecdot(vecnormalise(vecsub(light, q)), objn);
-	return phong(color, ambient, diffuse, 0);
+	Vector objn = closest->normal(shape, q);
+	Vector lightdir = vecnormalise(vecsub(light, q));
+	double diffuse = vecdot(lightdir, objn);
+	double spec = 0;
+	if (diffuse <= 0) {
+		return phong(color, ambient, 0, 0);
+	}
+	double shadow_t = find_closest(q, lightdir, &closest_index);
+	if (shadow_t > 0 && shadow_t < vecnorm(vecsub(light, q))) {
+		return phong(color, ambient, 0, 0);
+	}
+	Vector specdir = vecsub(vecscale(objn, 2 * diffuse), lightdir);
+	double specscale = vecdot(vecnormalise(specdir), vecscale(dir, -1));
+	if (specscale < 0)
+		spec = pow(specscale, 30);
+	return phong(color, ambient, diffuse, spec);
 }
 
 
@@ -135,7 +148,7 @@ int main(void)
 
 	add_infinite_plane(wallcolor,     0,  0, d*2,    0, 1, 0,    1, 0, 0);
 	add_infinite_plane(COLOR_RED,    -d,  0,   0,    0, 1, 0,    0, 0, 1);
-	add_infinite_plane(COLOR_BLUE,    d,  0,   0,    0, -1, 0,    0, 0, 1);
+	add_infinite_plane(COLOR_BLUE,    d,  0,   0,    0, 1, 1,    0, 1, 0);
 	add_infinite_plane(floorcolor,    0, -d,   0,    0, 0, 1,    1, 0, 0);
 
 	add_coplane(floorcolor,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
