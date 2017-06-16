@@ -133,10 +133,10 @@ int main(void)
 	float h = 2;
 	float r = d - h;
 
-	add_infinite_plane(wallcolor,     0,  0, d*2,    1, 0, 0,    0, 1, 0);
-	add_infinite_plane(COLOR_RED,    -d,  0,   0,    0, 0, 1,    0, 1, 0);
-	add_infinite_plane(COLOR_BLUE,    d,  0,   0,    0, 0, 1,    0, 1, 0);
-	add_infinite_plane(floorcolor,    0, -d,   0,    1, 0, 0,    0, 0, 1);
+	add_infinite_plane(wallcolor,     0,  0, d*2,    0, 1, 0,    1, 0, 0);
+	add_infinite_plane(COLOR_RED,    -d,  0,   0,    0, 1, 0,    0, 0, 1);
+	add_infinite_plane(COLOR_BLUE,    d,  0,   0,    0, -1, 0,    0, 0, 1);
+	add_infinite_plane(floorcolor,    0, -d,   0,    0, 0, 1,    1, 0, 0);
 
 	add_coplane(floorcolor,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
 
