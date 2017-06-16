@@ -55,9 +55,9 @@ static int writeinfoheader(FILE *f, size_t width, size_t height)
 static bmppix color_to_bmppix(Color x)
 {
 	bmppix y;
-	y.red   = (x.red   - DBL_EPSILON) * 256;
-	y.green = (x.green - DBL_EPSILON) * 256;
-	y.blue  = (x.blue  - DBL_EPSILON) * 256;
+	y.red   = x.red   > 1 ? 255 : (x.red   - DBL_EPSILON) * 256;
+	y.green = x.green > 1 ? 255 : (x.green - DBL_EPSILON) * 256;
+	y.blue  = x.blue  > 1 ? 255 : (x.blue  - DBL_EPSILON) * 256;
 	return y;
 }
 
