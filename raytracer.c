@@ -11,22 +11,17 @@
 #include "writebmp.h"
 
 
-typedef double intersector(void *, Vector, Vector);
+typedef double intersect_func(void *, Vector, Vector);
 typedef Vector normal_func(void *, Vector);
 
 typedef struct {
-	void *drawable;
-	intersector *intersect;
+	void *shape;
+	intersect_func *intersect;
 	normal_func *normal;
-} Object;
+} Scenery;
 
 
-static Color COLOR_RED = {1, 0, 0};
-static Color COLOR_GREEN = {0, 1, 0};
-static Color COLOR_BLUE = {0, 0, 1};
-
-
-static Object scene[100];
+static Scenery scene[100];
 static size_t scene_ctr = 0;
 
 int print_vector(Vector a)
@@ -37,15 +32,15 @@ int print_vector(Vector a)
 
 double find_closest(Vector pos, Vector dir, size_t *closest)
 {
-	void *drawable;
-	intersector *intersect;
+	void *shape;
+	intersect_func *intersect;
 	double t;
 	double min_t = -1;
 	size_t argmin_t;
 	for (size_t i = 0; i < scene_ctr; i++) {
-		drawable = scene[i].drawable;
+		shape = scene[i].shape;
 		intersect = scene[i].intersect;
-		t = intersect(drawable, pos, dir);
+		t = intersect(shape, pos, dir);
 		if (t > 0 && (min_t < 0 || t < min_t)) {
 			min_t = t;
 			argmin_t = i;
@@ -62,7 +57,7 @@ Color trace(Vector pos, Vector dir)
 	Color color = {0, 0, 0};
 	Vector light = {-5, 5, 0};
 	size_t closest_index;
-	Object *closest;
+	Scenery *closest;
 	Shape *shape;
 	double t = find_closest(pos, dir, &closest_index);
 	if (t <= 0)
@@ -70,7 +65,7 @@ Color trace(Vector pos, Vector dir)
 
 	Vector q = vecsub(pos, vecscale(dir, -t));
 	closest = &scene[closest_index];
-	shape = closest->drawable;
+	shape = closest->shape;
 
 	color = shape->color;
 	Vector objn = closest->normal(shape, q);
@@ -92,50 +87,57 @@ Color trace(Vector pos, Vector dir)
 }
 
 
-void draw()
+void draw(Vector eye, size_t width, size_t height)
 {
-	Vector eye = {0, 0, -6};
-	int halfres = 200;
-	Color *frame = malloc(halfres * halfres * 4 * sizeof(Color));
+	double w_ratio = width < height ? (double) width / height : 1;
+	double h_ratio = height < width ? (double) height / width : 1;
+	int halfwidth = width / 2;
+	int halfheight = height / 2;
+
+	Color *frame = malloc(width * height * sizeof(Color));
 	if (!frame) {
 		puts("Out of memory");
 		return;
 	}
-	for (int w = -halfres; w < halfres; w++) {
-		for (int h = -halfres; h < halfres; h++) {
-			double x = (double) w / halfres;
-			double y = (double) h / halfres;
+	for (int w = -halfwidth; w < halfwidth; w++) {
+		for (int h = -halfheight; h < halfheight; h++) {
+			double x = (double) w_ratio * w / halfwidth;
+			double y = (double) h_ratio * h / halfheight;
 			Vector pix = {x, y, -5};
 			Vector dir = vecnormalise(vecsub(pix, eye));
-			size_t pt = (halfres - h - 1) * halfres * 2 + (halfres + w);
+			size_t pt = (halfheight - h - 1) * width + (halfwidth + w);
 			frame[pt] = trace(eye, dir);
 		}
 	}
 	FILE *f = fopen("output.bmp", "wb");
-	writebitmap(f, frame, halfres * 2, halfres * 2);
+	writebitmap(f, frame, width, height);
 	fclose(f);
 	free(frame);
 }
 
 
 #define add_sphere(C, X, Y, Z, R) scene[scene_ctr++] = \
-	(Object){&(Sphere){C, {X, Y, Z}, R}, &intersect_sphere, &normal_sphere}
+	(Scenery){&(Sphere){C, {X, Y, Z}, R}, &intersect_sphere, &normal_sphere}
 
 #define add_plane(C, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
-	(Object){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
+	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
 	&intersect_plane, &normal_plane}
 
 #define add_coplane(C, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
-	(Object){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
+	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
 	&intersect_coplane, &normal_plane}
 
 #define add_infinite_plane(C, X, Y, Z, U1, U2, U3, W1, W2, W3) \
 	scene[scene_ctr++] = \
-	(Object){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
+	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
 	&intersect_coplane, &normal_plane}
+
 
 int main(void)
 {
+	Color COLOR_RED = {1, 0, 0};
+	Color COLOR_GREEN = {0, 1, 0};
+	Color COLOR_BLUE = {0, 0, 1};
 	Color wallcolor = {1, 0.8, 0.4};
 	Color floorcolor = {0.3, 0.3, 0.35};
 
@@ -153,5 +155,6 @@ int main(void)
 
 	add_coplane(floorcolor,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
 
-	draw();
+	Vector eye = {0, 0, -6};
+	draw(eye, 480, 360);
 }
