@@ -24,11 +24,6 @@ typedef struct {
 static Scenery scene[100];
 static size_t scene_ctr = 0;
 
-int print_vector(Vector a)
-{
-	return printf("(%f, %f, %f)\n", a.x, a.y, a.z);
-}
-
 
 double find_closest(Vector pos, Vector dir, size_t *closest)
 {
@@ -63,7 +58,7 @@ Color trace(Vector pos, Vector dir)
 	if (t <= 0)
 		return color;
 
-	Vector q = vecsub(pos, vecscale(dir, -t));
+	Vector q = vecadd(pos, vecscale(dir, t));
 	closest = &scene[closest_index];
 	shape = closest->shape;
 
@@ -87,32 +82,24 @@ Color trace(Vector pos, Vector dir)
 }
 
 
-void draw(Vector eye, size_t width, size_t height)
+void draw(Color *frame, Vector eye, double focal, size_t width, size_t height)
 {
 	double w_ratio = width < height ? (double) width / height : 1;
 	double h_ratio = height < width ? (double) height / width : 1;
 	int halfwidth = width / 2;
 	int halfheight = height / 2;
 
-	Color *frame = malloc(width * height * sizeof(Color));
-	if (!frame) {
-		puts("Out of memory");
-		return;
-	}
 	for (int w = -halfwidth; w < halfwidth; w++) {
 		for (int h = -halfheight; h < halfheight; h++) {
 			double x = (double) w_ratio * w / halfwidth;
 			double y = (double) h_ratio * h / halfheight;
-			Vector pix = {x, y, -5};
-			Vector dir = vecnormalise(vecsub(pix, eye));
+			Vector view_dir = {x, y, focal};
+			Vector pix = vecadd(eye, view_dir);
+			Vector dir = vecnormalise(view_dir);
 			size_t pt = (halfheight - h - 1) * width + (halfwidth + w);
 			frame[pt] = trace(eye, dir);
 		}
 	}
-	FILE *f = fopen("output.bmp", "wb");
-	writebitmap(f, frame, width, height);
-	fclose(f);
-	free(frame);
 }
 
 
@@ -132,6 +119,11 @@ void draw(Vector eye, size_t width, size_t height)
 	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
 	&intersect_coplane, &normal_plane}
 
+
+int print_vector(Vector a)
+{
+	return printf("(%f, %f, %f)\n", a.x, a.y, a.z);
+}
 
 int main(void)
 {
@@ -156,5 +148,19 @@ int main(void)
 	add_coplane(floorcolor,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
 
 	Vector eye = {0, 0, -6};
-	draw(eye, 480, 360);
+	size_t width = 480;
+	size_t height = 480;
+
+	Color *frame = malloc(width * height * sizeof(Color));
+	if (!frame) {
+		puts("Out of memory");
+		return -1;
+	}
+
+	draw(frame, eye, 1, width, height);
+
+	FILE *f = fopen("output.bmp", "wb");
+	writebitmap(f, frame, width, height);
+	fclose(f);
+	free(frame);
 }

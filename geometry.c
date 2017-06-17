@@ -59,7 +59,7 @@ double intersect_plane(void *x, Vector pos, Vector dir)
 	Plane *p = x;
 	double t = intersect_infinite_plane(p, pos, dir);
 
-	Vector hdir = vecsub(vecsub(pos, vecscale(dir, -t)), p->anchor);
+	Vector hdir = vecsub(vecadd(pos, vecscale(dir, t)), p->anchor);
 	double proj1_scale = vecdot(hdir, p->dir1);
 	if (proj1_scale < 0 || proj1_scale > vecdot(p->dir1, p->dir1))
 		return -1;
@@ -74,7 +74,7 @@ double intersect_coplane(void *x, Vector pos, Vector dir)
 	Plane *p = x;
 	double t = intersect_infinite_plane(p, pos, dir);
 
-	Vector hdir = vecsub(vecsub(pos, vecscale(dir, -t)), p->anchor);
+	Vector hdir = vecsub(vecadd(pos, vecscale(dir, t)), p->anchor);
 	double proj1_scale = vecdot(hdir, p->dir1);
 	if (proj1_scale < 0 || proj1_scale > vecdot(p->dir1, p->dir1))
 		return t;

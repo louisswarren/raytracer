@@ -2,6 +2,11 @@
 
 #include "vector.h"
 
+Vector vecadd(Vector a, Vector b)
+{
+	return (Vector){a.x + b.x, a.y + b.y, a.z + b.z};
+}
+
 Vector vecsub(Vector a, Vector b)
 {
 	return (Vector){a.x - b.x, a.y - b.y, a.z - b.z};

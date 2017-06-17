@@ -2,6 +2,8 @@ typedef struct {
 	double x, y, z;
 } Vector;
 
+Vector vecadd(Vector a, Vector b);
+
 Vector vecsub(Vector a, Vector b);
 
 Vector vecscale(Vector a, double s);
