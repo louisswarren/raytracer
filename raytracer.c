@@ -16,6 +16,7 @@ typedef Vector normal_func(void *, Vector);
 
 typedef struct {
 	void *shape;
+	double refl;
 	intersect_func *intersect;
 	normal_func *normal;
 } Scenery;
@@ -64,6 +65,17 @@ Color trace(Vector pos, Vector dir)
 
 	color = shape->color;
 	Vector objn = closest->normal(shape, q);
+
+	// Color bleed
+	Vector refldir = vecsub(dir, vecscale(objn, 2 * vecdot(objn, dir)));
+	double b = find_closest(q, refldir, &closest_index);
+	if (b > 0) {
+		Scenery *reflobj = &scene[closest_index];
+		Shape *reflshape = reflobj->shape;
+		Color bleed_color = reflshape->color;
+		color = coloradd(color, bleed_color, closest->refl / (1 + b * b));
+	}
+
 	Vector lightdir = vecnormalise(vecsub(light, q));
 	double diffuse = vecdot(lightdir, objn);
 	double spec = 0;
@@ -103,21 +115,21 @@ void draw(Color *frame, Vector eye, double focal, size_t width, size_t height)
 }
 
 
-#define add_sphere(C, X, Y, Z, R) scene[scene_ctr++] = \
-	(Scenery){&(Sphere){C, {X, Y, Z}, R}, &intersect_sphere, &normal_sphere}
+#define add_sphere(C, Q, X, Y, Z, R) scene[scene_ctr++] = \
+	(Scenery){&(Sphere){C, {X, Y, Z}, R}, Q, &intersect_sphere, &normal_sphere}
 
-#define add_plane(C, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
+#define add_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
 	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	&intersect_plane, &normal_plane}
+	Q, &intersect_plane, &normal_plane}
 
-#define add_coplane(C, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
+#define add_coplane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
 	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	&intersect_coplane, &normal_plane}
+	Q, &intersect_coplane, &normal_plane}
 
-#define add_infinite_plane(C, X, Y, Z, U1, U2, U3, W1, W2, W3) \
+#define add_infinite_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) \
 	scene[scene_ctr++] = \
 	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	&intersect_coplane, &normal_plane}
+	Q, &intersect_coplane, &normal_plane}
 
 
 int print_vector(Vector a)
@@ -133,19 +145,19 @@ int main(void)
 	Color wallcolor = {1, 0.8, 0.4};
 	Color floorcolor = {0.3, 0.3, 0.35};
 
-	add_sphere(COLOR_RED,     0, 0, 10,    2);
-	add_sphere(COLOR_BLUE,    4, 4, 5,     1);
+	add_sphere(COLOR_RED,  0,    0, 0, 10,    2);
+	add_sphere(COLOR_BLUE, 0,    4, 4, 5,     1);
 
 	float d = 10;
 	float h = 2;
 	float r = d - h;
 
-	add_infinite_plane(wallcolor,     0,  0, d*2,    0, 1, 0,    1, 0, 0);
-	add_infinite_plane(COLOR_RED,    -d,  0,   0,    0, 1, 0,    0, 0, 1);
-	add_infinite_plane(COLOR_BLUE,    d,  0,   0,    0, 1, 1,    0, 1, 0);
-	add_infinite_plane(floorcolor,    0, -d,   0,    0, 0, 1,    1, 0, 0);
+	add_infinite_plane(wallcolor,  0,    0,  0, d*2,    0, 1, 0,    1, 0, 0);
+	add_infinite_plane(COLOR_RED,  0,   -d,  0,   0,    0, 1, 0,    0, 0, 1);
+	add_infinite_plane(COLOR_BLUE, 0,    d,  0,   0,    0, 1, 1,    0, 1, 0);
+	add_infinite_plane(floorcolor, 0.5,  0, -d,   0,    0, 0, 1,    1, 0, 0);
 
-	add_coplane(floorcolor,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
+	add_coplane(floorcolor, 0.2,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
 
 	Vector eye = {0, 0, -6};
 	size_t width = 480;
