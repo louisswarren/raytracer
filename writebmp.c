@@ -70,9 +70,9 @@ int writebitmap(FILE *f, Color img[], size_t width, size_t height)
 	writefileheader(f, fsize);
 	writeinfoheader(f, width, height);
 
-	for (int r = height - 1; r >= 0; r--) {
-		for (size_t j = 0; j < width; j++) {
-			bmppix pixel = color_to_bmppix(img[r * width + j]);
+	for (size_t y = 0; y < height; y++) {
+		for (size_t x = 0; x < width; x++) {
+			bmppix pixel = color_to_bmppix(img[y * width + x]);
 			fwrite(&pixel, 3, 1, f);
 		}
 		if (pad_len)

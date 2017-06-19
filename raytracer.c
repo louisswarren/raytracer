@@ -81,21 +81,19 @@ Color trace(Ray ray)
 }
 
 
-void draw(Color *frame, Vector eye, double focal, size_t width, size_t height)
+void draw(Color *frame, Vector eye, double focal, int width, int height)
 {
 	double w_ratio = width < height ? (double) width / height : 1;
 	double h_ratio = height < width ? (double) height / width : 1;
-	int halfwidth = width / 2;
-	int halfheight = height / 2;
 
-	for (int w = -halfwidth; w < halfwidth; w++) {
-		for (int h = -halfheight; h < halfheight; h++) {
-			double x = (double) w_ratio * w / halfwidth;
-			double y = (double) h_ratio * h / halfheight;
+	for (int w = 0; w < width; w++) {
+		for (int h = 0; h < height; h++) {
+			double x = w_ratio * (2 * w - width) / width;
+			double y = h_ratio * (2 * h - height) / height;
 			Vector view_dir = {x, y, focal};
 			Vector pix = vecadd(eye, view_dir);
 			Vector dir = vecnormalise(view_dir);
-			size_t pt = (halfheight - h - 1) * width + (halfwidth + w);
+			size_t pt = h * width + w;
 			Ray ray = {eye, dir};
 			frame[pt] = trace(ray);
 		}
