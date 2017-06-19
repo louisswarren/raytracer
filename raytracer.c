@@ -23,12 +23,15 @@ typedef struct {
 typedef struct {
 	Scenery *object;
 	double dist;
+	Vector pos;
 } Observation;
 
 
 static Scenery scene[100];
 static size_t scene_ctr = 0;
 
+static Color ambient_light = {0.2, 0.2, 0.2};
+static Vector light_pos = {5, 5, 0};
 
 Observation find_closest(Ray ray)
 {
@@ -41,46 +44,43 @@ Observation find_closest(Ray ray)
 			argmin_dist = i;
 		}
 	}
-	return (Observation){&scene[argmin_dist], min_dist};
+	Vector pos = vecadd(ray.pos, vecscale(ray.dir, min_dist));
+	return (Observation){&scene[argmin_dist], min_dist, pos};
 }
 
+int in_shadow(Vector pos, Vector lightdir)
+{
+	Ray shadow_ray = {pos, lightdir};
+	Observation shade = find_closest(shadow_ray);
+	double dist_to_light = vecnorm(vecsub(light_pos, pos));
+	return (shade.dist > 0 && shade.dist < dist_to_light);
+}
 
 Color trace(Ray ray)
 {
-	Color ambient = {0.2, 0.2, 0.2};
-	Color color = {0, 0, 0};
-	Vector light = {5, 5, 0};
-	Scenery *closest;
-	Shape *shape;
-	Observation ob = find_closest(ray);
-	double t = ob.dist;
-	closest = ob.object;
-	if (t <= 0)
-		return color;
+	Observation observed = find_closest(ray);
+	if (observed.dist <= 0)
+		return (Color){0, 0, 0};
 
-	Vector q = vecadd(ray.pos, vecscale(ray.dir, t));
-	shape = closest->shape;
+	Shape *shape = observed.object->shape;
+	Color color = shape->color;
+	Vector objn = observed.object->normal(shape, observed.pos);
 
-	color = shape->color;
-	Vector objn = closest->normal(shape, q);
-
-	Vector lightdir = vecnormalise(vecsub(light, q));
+	Vector lightdir = vecnormalise(vecsub(light_pos, observed.pos));
 	double diffuse = vecdot(lightdir, objn);
 	double spec = 0;
 	if (diffuse <= 0) {
-		return phong(color, ambient, 0, 0);
+		return phong(color, ambient_light, 0, 0);
 	}
-	Ray shadow_ray = {q, lightdir};
-	Observation sho = find_closest(shadow_ray);
-	double shadow_t = sho.dist;
-	if (shadow_t > 0 && shadow_t < vecnorm(vecsub(light, q))) {
-		return phong(color, ambient, 0, 0);
+
+	if (in_shadow(observed.pos, lightdir)) {
+		return phong(color, ambient_light, 0, 0);
 	}
 	Vector specdir = vecsub(vecscale(objn, 2 * diffuse), lightdir);
 	double specscale = vecdot(vecnormalise(specdir), vecscale(ray.dir, -1));
 	if (specscale < 0)
 		spec = pow(specscale, 30);
-	return phong(color, ambient, diffuse, spec);
+	return phong(color, ambient_light, diffuse, spec);
 }
 
 
