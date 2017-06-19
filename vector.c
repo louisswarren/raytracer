@@ -22,14 +22,14 @@ double vecdot(Vector a, Vector b)
 	return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-double vecnorm(Vector a)
+double vecmagnitude(Vector a)
 {
 	return sqrt(vecdot(a, a));
 }
 
 Vector vecnormalise(Vector a)
 {
-	return vecscale(a, 1/vecnorm(a));
+	return vecscale(a, 1/vecmagnitude(a));
 }
 
 Vector veccross(Vector a, Vector b)

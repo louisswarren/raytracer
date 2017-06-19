@@ -48,11 +48,11 @@ Observation find_closest(Ray ray)
 	return (Observation){&scene[argmin_dist], min_dist, pos};
 }
 
-int in_shadow(Vector pos, Vector lightdir)
+int in_shadow(Vector pos, Vector light_dir)
 {
-	Ray shadow_ray = {pos, lightdir};
+	Ray shadow_ray = {pos, light_dir};
 	Observation shade = find_closest(shadow_ray);
-	double dist_to_light = vecnorm(vecsub(light_pos, pos));
+	double dist_to_light = vecmagnitude(vecsub(light_pos, pos));
 	return (shade.dist > 0 && shade.dist < dist_to_light);
 }
 
@@ -65,18 +65,15 @@ Color trace(Ray ray)
 	Shape *shape = observed.object->shape;
 	Color color = shape->color;
 	Vector objn = observed.object->normal(shape, observed.pos);
+	Vector light_dir = vecnormalise(vecsub(light_pos, observed.pos));
 
-	Vector lightdir = vecnormalise(vecsub(light_pos, observed.pos));
-	double diffuse = vecdot(lightdir, objn);
+	double diffuse = vecdot(light_dir, objn);
+	if (diffuse <= 0 || in_shadow(observed.pos, light_dir)) {
+		return phong(color, ambient_light, 0, 0);
+	}
+
 	double spec = 0;
-	if (diffuse <= 0) {
-		return phong(color, ambient_light, 0, 0);
-	}
-
-	if (in_shadow(observed.pos, lightdir)) {
-		return phong(color, ambient_light, 0, 0);
-	}
-	Vector specdir = vecsub(vecscale(objn, 2 * diffuse), lightdir);
+	Vector specdir = vecsub(vecscale(objn, 2 * diffuse), light_dir);
 	double specscale = vecdot(vecnormalise(specdir), vecscale(ray.dir, -1));
 	if (specscale < 0)
 		spec = pow(specscale, 30);

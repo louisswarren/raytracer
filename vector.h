@@ -15,7 +15,7 @@ Vector vecscale(Vector a, double s);
 
 double vecdot(Vector a, Vector b);
 
-double vecnorm(Vector a);
+double vecmagnitude(Vector a);
 
 Vector vecnormalise(Vector a);
 
