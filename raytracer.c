@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 200809L
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,60 +20,49 @@ typedef struct {
 	normal_func *normal;
 } Scenery;
 
+typedef struct {
+	Scenery *object;
+	double dist;
+} Observation;
+
 
 static Scenery scene[100];
 static size_t scene_ctr = 0;
 
 
-double find_closest(Vector pos, Vector dir, size_t *closest)
+Observation find_closest(Ray ray)
 {
-	void *shape;
-	intersect_func *intersect;
-	double t;
-	double min_t = -1;
-	size_t argmin_t;
+	size_t argmin_dist;
+	double dist, min_dist = -1;
 	for (size_t i = 0; i < scene_ctr; i++) {
-		shape = scene[i].shape;
-		intersect = scene[i].intersect;
-		t = intersect(shape, pos, dir);
-		if (t > 0 && (min_t < 0 || t < min_t)) {
-			min_t = t;
-			argmin_t = i;
+		dist = scene[i].intersect(scene[i].shape, ray.pos, ray.dir);
+		if (dist > 0 && (min_dist < 0 || dist < min_dist)) {
+			min_dist = dist;
+			argmin_dist = i;
 		}
 	}
-	*closest = argmin_t;
-	return min_t;
+	return (Observation){&scene[argmin_dist], min_dist};
 }
 
 
-Color trace(Vector pos, Vector dir)
+Color trace(Ray ray)
 {
 	Color ambient = {0.2, 0.2, 0.2};
 	Color color = {0, 0, 0};
-	Vector light = {-5, 5, 0};
-	size_t closest_index;
+	Vector light = {5, 5, 0};
 	Scenery *closest;
 	Shape *shape;
-	double t = find_closest(pos, dir, &closest_index);
+	Observation ob = find_closest(ray);
+	double t = ob.dist;
+	closest = ob.object;
 	if (t <= 0)
 		return color;
 
-	Vector q = vecadd(pos, vecscale(dir, t));
-	closest = &scene[closest_index];
+	Vector q = vecadd(ray.pos, vecscale(ray.dir, t));
 	shape = closest->shape;
 
 	color = shape->color;
 	Vector objn = closest->normal(shape, q);
-
-	// Color bleed
-	Vector refldir = vecsub(dir, vecscale(objn, 2 * vecdot(objn, dir)));
-	double b = find_closest(q, refldir, &closest_index);
-	if (b > 0) {
-		Scenery *reflobj = &scene[closest_index];
-		Shape *reflshape = reflobj->shape;
-		Color bleed_color = reflshape->color;
-		color = coloradd(color, bleed_color, closest->refl / (1 + b * b));
-	}
 
 	Vector lightdir = vecnormalise(vecsub(light, q));
 	double diffuse = vecdot(lightdir, objn);
@@ -82,12 +70,14 @@ Color trace(Vector pos, Vector dir)
 	if (diffuse <= 0) {
 		return phong(color, ambient, 0, 0);
 	}
-	double shadow_t = find_closest(q, lightdir, &closest_index);
+	Ray shadow_ray = {q, lightdir};
+	Observation sho = find_closest(shadow_ray);
+	double shadow_t = sho.dist;
 	if (shadow_t > 0 && shadow_t < vecnorm(vecsub(light, q))) {
 		return phong(color, ambient, 0, 0);
 	}
 	Vector specdir = vecsub(vecscale(objn, 2 * diffuse), lightdir);
-	double specscale = vecdot(vecnormalise(specdir), vecscale(dir, -1));
+	double specscale = vecdot(vecnormalise(specdir), vecscale(ray.dir, -1));
 	if (specscale < 0)
 		spec = pow(specscale, 30);
 	return phong(color, ambient, diffuse, spec);
@@ -109,7 +99,8 @@ void draw(Color *frame, Vector eye, double focal, size_t width, size_t height)
 			Vector pix = vecadd(eye, view_dir);
 			Vector dir = vecnormalise(view_dir);
 			size_t pt = (halfheight - h - 1) * width + (halfwidth + w);
-			frame[pt] = trace(eye, dir);
+			Ray ray = {eye, dir};
+			frame[pt] = trace(ray);
 		}
 	}
 }
@@ -129,7 +120,7 @@ void draw(Color *frame, Vector eye, double focal, size_t width, size_t height)
 #define add_infinite_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) \
 	scene[scene_ctr++] = \
 	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	Q, &intersect_coplane, &normal_plane}
+	Q, &intersect_infinite_plane, &normal_plane}
 
 
 int print_vector(Vector a)
@@ -145,8 +136,8 @@ int main(void)
 	Color wallcolor = {1, 0.8, 0.4};
 	Color floorcolor = {0.3, 0.3, 0.35};
 
-	add_sphere(COLOR_RED,  0,    0, 0, 10,    2);
-	add_sphere(COLOR_BLUE, 0,    4, 4, 5,     1);
+	add_sphere(COLOR_RED,   0,    0, -3, 10,    2);
+	add_sphere(COLOR_GREEN, 0,    4,  4, 5,     1);
 
 	float d = 10;
 	float h = 2;

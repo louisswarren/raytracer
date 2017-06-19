@@ -2,6 +2,11 @@ typedef struct {
 	double x, y, z;
 } Vector;
 
+typedef struct {
+	Vector pos;
+	Vector dir;
+} Ray;
+
 Vector vecadd(Vector a, Vector b);
 
 Vector vecsub(Vector a, Vector b);
