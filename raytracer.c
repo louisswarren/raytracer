@@ -33,7 +33,7 @@ static size_t scene_ctr = 0;
 static Color ambient_light = {0.2, 0.2, 0.2};
 static Vector light_pos = {5, 5, 0};
 
-static double aa_threshhold = 0.001;
+static double aa_threshhold = 0.0001;
 
 Observation observe(Ray ray)
 {
@@ -58,6 +58,15 @@ int in_shadow(Vector pos, Vector light_dir)
 	return (shade.dist > 0 && shade.dist < dist_to_light);
 }
 
+Color trace_reflection(Vector pos, Vector in_dir, Vector normal)
+{
+	double incidence = vecdot(normal, in_dir);
+	Vector refl_dir = vecsub(in_dir, vecscale(normal, 2 * incidence));
+	Ray refl_ray = {pos, refl_dir};
+	Observation reflected = observe(refl_ray);
+	return ((Shape *)reflected.object->shape)->color;
+}
+
 Color trace(Ray ray)
 {
 	Observation observed = observe(ray);
@@ -68,6 +77,11 @@ Color trace(Ray ray)
 	Color color = shape->color;
 	Vector objn = observed.object->normal(shape, observed.pos);
 	Vector light_dir = vecnormalise(vecsub(light_pos, observed.pos));
+
+	if (observed.object->refl > 0) {
+		Color refl_color = trace_reflection(observed.pos, ray.dir, objn);
+		color = coloradd(color, refl_color, observed.object->refl);
+	}
 
 	double diffuse = vecdot(light_dir, objn);
 	if (diffuse <= 0 || in_shadow(observed.pos, light_dir)) {
@@ -180,11 +194,12 @@ int main(void)
 	Color COLOR_RED = {1, 0, 0};
 	Color COLOR_GREEN = {0, 1, 0};
 	Color COLOR_BLUE = {0, 0, 1};
+	Color COLOR_BLACK = {0, 0, 0};
 	Color wallcolor = {1, 0.8, 0.4};
 	Color floorcolor = {0.3, 0.3, 0.35};
 
-	add_sphere(COLOR_RED,   0,    0, -3, 10,    2);
-	add_sphere(COLOR_GREEN, 0,    4,  4, 5,     1);
+	add_sphere(COLOR_BLACK, 0.9,    0, -3, 10,    2);
+	add_sphere(COLOR_GREEN, 0.9,    4,  4, 5,     1);
 
 	float d = 10;
 	float h = 2;
@@ -193,9 +208,9 @@ int main(void)
 	add_infinite_plane(wallcolor,  0,    0,  0, d*2,    0, 1, 0,    1, 0, 0);
 	add_infinite_plane(COLOR_RED,  0,   -d,  0,   0,    0, 1, 0,    0, 0, 1);
 	add_infinite_plane(COLOR_BLUE, 0,    d,  0,   0,    0, 1, 1,    0, 1, 0);
-	add_infinite_plane(floorcolor, 0.5,  0, -d,   0,    0, 0, 1,    1, 0, 0);
+	add_infinite_plane(floorcolor, 0,    0, -d,   0,    0, 0, 1,    1, 0, 0);
 
-	add_coplane(floorcolor, 0.2,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
+	add_coplane(floorcolor, 0,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
 
 	Ray view = {{0, 0, -6}, {0, 0, 1}};
 	size_t width = 480;
