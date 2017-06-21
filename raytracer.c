@@ -47,6 +47,8 @@ Observation observe(Ray ray)
 			argmin_dist = i;
 		}
 	}
+	if (min_dist < 0)
+		return (Observation){NULL, -1, {0, 0, 0}};
 	Vector pos = vecadd(ray.pos, vecscale(ray.dir, min_dist));
 	return (Observation){&scene[argmin_dist], min_dist, pos};
 }
@@ -65,6 +67,8 @@ Color trace_reflection(Vector pos, Vector in_dir, Vector normal)
 	Vector refl_dir = vecsub(in_dir, vecscale(normal, 2 * incidence));
 	Ray refl_ray = {pos, refl_dir};
 	Observation reflected = observe(refl_ray);
+	if (!reflected.object)
+		return (Color){0, 0, 0};
 	return reflected.object->color;
 }
 
@@ -206,7 +210,7 @@ int main(void)
 	float h = 2;
 	float r = d - h;
 
-	add_infinite_plane(wallcolor,  0,    0,  0, d*2,    0, 1, 0,    1, 0, 0);
+	add_infinite_plane(wallcolor,  0.1,    0,  0, d*2,    0, 1, 0,    1, 0, 0);
 	add_infinite_plane(COLOR_RED,  0,   -d,  0,   0,    0, 1, 0,    0, 0, 1);
 	add_infinite_plane(COLOR_BLUE, 0,    d,  0,   0,    0, 1, 1,    0, 1, 0);
 	add_infinite_plane(floorcolor, 0,    0, -d,   0,    0, 0, 1,    1, 0, 0);
