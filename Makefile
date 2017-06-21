@@ -18,7 +18,7 @@ raytracer.o: raytracer.c color.h geometry.h vector.h writebmp.h
 color.o: color.c color.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
-geometry.o: geometry.c geometry.h color.h vector.h
+geometry.o: geometry.c geometry.h vector.h
 	$(CC) $(CFLAGS) -o $@ -c $<
 
 vector.o: vector.c vector.h

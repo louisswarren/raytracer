@@ -1,7 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "color.h"
 #include "vector.h"
 #include "geometry.h"
 

@@ -15,6 +15,7 @@ typedef Vector normal_func(void *, Vector);
 
 typedef struct {
 	void *shape;
+	Color color;
 	double refl;
 	intersect_func *intersect;
 	normal_func *normal;
@@ -64,7 +65,7 @@ Color trace_reflection(Vector pos, Vector in_dir, Vector normal)
 	Vector refl_dir = vecsub(in_dir, vecscale(normal, 2 * incidence));
 	Ray refl_ray = {pos, refl_dir};
 	Observation reflected = observe(refl_ray);
-	return ((Shape *)reflected.object->shape)->color;
+	return reflected.object->color;
 }
 
 Color trace(Ray ray)
@@ -73,8 +74,8 @@ Color trace(Ray ray)
 	if (observed.dist <= 0)
 		return (Color){0, 0, 0};
 
-	Shape *shape = observed.object->shape;
-	Color color = shape->color;
+	void *shape = observed.object->shape;
+	Color color = observed.object->color;
 	Vector objn = observed.object->normal(shape, observed.pos);
 	Vector light_dir = vecnormalise(vecsub(light_pos, observed.pos));
 
@@ -168,20 +169,20 @@ void draw(Color *frame, Ray view, double focal, int width, int height)
 }
 
 #define add_sphere(C, Q, X, Y, Z, R) scene[scene_ctr++] = \
-	(Scenery){&(Sphere){C, {X, Y, Z}, R}, Q, &intersect_sphere, &normal_sphere}
+	(Scenery){&(Sphere){{X, Y, Z}, R}, C, Q, &intersect_sphere, &normal_sphere}
 
 #define add_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
-	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	Q, &intersect_plane, &normal_plane}
+	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
+	C, Q, &intersect_plane, &normal_plane}
 
 #define add_coplane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
-	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	Q, &intersect_coplane, &normal_plane}
+	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
+	C, Q, &intersect_coplane, &normal_plane}
 
 #define add_infinite_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) \
 	scene[scene_ctr++] = \
-	(Scenery){&(Plane){C, {X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	Q, &intersect_infinite_plane, &normal_plane}
+	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
+	C, Q, &intersect_infinite_plane, &normal_plane}
 
 
 int print_vector(Vector a)

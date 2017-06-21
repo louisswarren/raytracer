@@ -1,21 +1,14 @@
 typedef struct {
-	Color color;
-} Shape;
-
-typedef struct {
-	Color color;
 	Vector center;
 	double radius;
 } Sphere;
 
 typedef struct {
-	Color color;
 	Vector anchor;
 	Vector dir1, dir2;
 } Plane;
 
 typedef struct {
-	Color color;
 	Vector center;
 	Vector axis1, axis2, axis3;
 	double width, height, depth;
