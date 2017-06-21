@@ -33,9 +33,9 @@ static size_t scene_ctr = 0;
 static Color ambient_light = {0.2, 0.2, 0.2};
 static Vector light_pos = {5, 5, 0};
 
-static double aa_threashhold = 0.001;
+static double aa_threshhold = 0.001;
 
-Observation find_closest(Ray ray)
+Observation observe(Ray ray)
 {
 	size_t argmin_dist;
 	double dist, min_dist = -1;
@@ -53,14 +53,14 @@ Observation find_closest(Ray ray)
 int in_shadow(Vector pos, Vector light_dir)
 {
 	Ray shadow_ray = {pos, light_dir};
-	Observation shade = find_closest(shadow_ray);
+	Observation shade = observe(shadow_ray);
 	double dist_to_light = vecmagnitude(vecsub(light_pos, pos));
 	return (shade.dist > 0 && shade.dist < dist_to_light);
 }
 
 Color trace(Ray ray)
 {
-	Observation observed = find_closest(ray);
+	Observation observed = observe(ray);
 	if (observed.dist <= 0)
 		return (Color){0, 0, 0};
 
@@ -83,34 +83,17 @@ Color trace(Ray ray)
 }
 
 
-Color sample_pixel
-(
-	int w, int h, int width, int height, Vector eye, double focal
-)
+Color multisample_pixel(int level, Ray ray, double pixel_size)
 {
-	double w_ratio = width < height ? (double) width / height : 1;
-	double h_ratio = height < width ? (double) height / width : 1;
-
-	double x = w_ratio * (2 * w - width) / width;
-	double y = h_ratio * (2 * h - height) / height;
-	Vector view_dir = {x, y, focal};
-	Vector pix = vecadd(eye, view_dir);
-	Vector dir = vecnormalise(view_dir);
-	Ray ray = {eye, dir};
-	return trace(ray);
-}
-
-Color multisample_pixel
-(
-	int level, int w, int h, int width, int height, Vector eye, double focal
-)
-{
+	double subpixel_size = pixel_size / level;
 	Color col = {0, 0, 0};
-	for (size_t i = 0; i < level; i++) {
-		for (size_t j = 0; j < level; j++) {
-			Color sample = sample_pixel(w * level + i, h * level + j,
-					                    width * level, height * level,
-										eye, focal);
+	for (int i = 0; i < level; i++) {
+		for (int j = 0; j < level; j++) {
+			Vector subpos = {(i + 0.5 - level / 2) * subpixel_size,
+			                 (j + 0.5 - level / 2) * subpixel_size,
+			                 0};
+			Ray subray = {ray.pos, vecnormalise(vecadd(ray.dir, subpos))};
+			Color sample = trace(subray);
 			col.red += sample.red;
 			col.green += sample.green;
 			col.blue += sample.blue;
@@ -122,37 +105,53 @@ Color multisample_pixel
 	return col;
 }
 
-void draw(Color *frame, Vector eye, double focal, int width, int height)
+
+int pixel_needs_aa(Color *frame, int h, int w, int width)
 {
+	Color p = frame[h * width + w];
+	Color n[4] = {
+		frame[(h - 1) * width + w],
+		frame[(h + 1) * width + w],
+		frame[h * width + w - 1],
+		frame[h * width + w + 1],
+	};
+	return (colorvariance(p, n, 4) > aa_threshhold);
+}
+
+void draw(Color *frame, Ray view, double focal, int width, int height)
+{
+	double pixel_size = width > height ? 2.0 / width : 2.0 / height;
+
 	for (int w = 0; w < width; w++) {
 		for (int h = 0; h < height; h++) {
-			size_t pt = h * width + w;
-			frame[pt] = sample_pixel(w, h, width, height, eye, focal);
+			double x = (w + 0.5 - width  / 2) * pixel_size;
+			double y = (h + 0.5 - height / 2) * pixel_size;
+
+			Vector pixel_dir = {x, y, focal}; // This ignores view.dir !!!
+			Ray ray = {view.pos, vecnormalise(pixel_dir)};
+			frame[h * width + w] = trace(ray);
 		}
 	}
 
-	if (aa_threashhold < 0)
+	if (aa_threshhold < 0)
 		return;
 
+	int aa_level = 4;
 	for (int w = 1; w < width - 1; w++) {
 		for (int h = 1; h < height - 1; h++) {
-			Color p = frame[h * width + w];
-			Color n[4] = {
-				frame[(h - 1) * width + w],
-				frame[(h + 1) * width + w],
-				frame[h * width + w - 1],
-				frame[h * width + w + 1],
-			};
-			if (colorvariance(p, n, 4) > aa_threashhold) {
-				frame[h * width + w] =
-					multisample_pixel(4, w, h, width, height, eye, focal);
+			if (pixel_needs_aa(frame, h, w, width)) {
+				double x = (w + 0.5 - width  / 2) * pixel_size;
+				double y = (h + 0.5 - height / 2) * pixel_size;
+
+				Vector pixel_dir = {x, y, focal}; // This ignores view.dir !!!
+				Ray ray = {view.pos, vecnormalise(pixel_dir)};
+				frame[h * width + w] = multisample_pixel(4, ray, pixel_size);
 			} else {
 				frame[h * width + w] = frame[h * width + w];
 			}
 		}
 	}
 }
-
 
 #define add_sphere(C, Q, X, Y, Z, R) scene[scene_ctr++] = \
 	(Scenery){&(Sphere){C, {X, Y, Z}, R}, Q, &intersect_sphere, &normal_sphere}
@@ -198,9 +197,9 @@ int main(void)
 
 	add_coplane(floorcolor, 0.2,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
 
-	Vector eye = {0, 0, -6};
-	size_t width = 640;
-	size_t height = 640;
+	Ray view = {{0, 0, -6}, {0, 0, 1}};
+	size_t width = 480;
+	size_t height = 480;
 
 	Color *frame = malloc(width * height * sizeof(Color));
 	if (!frame) {
@@ -208,7 +207,7 @@ int main(void)
 		return -1;
 	}
 
-	draw(frame, eye, 1, width, height);
+	draw(frame, view, 1, width, height);
 
 	FILE *f = fopen("output.bmp", "wb");
 	writebitmap(f, frame, width, height);
