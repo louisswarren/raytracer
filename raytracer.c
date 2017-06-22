@@ -12,6 +12,7 @@
 
 typedef double intersect_func(void *, Vector, Vector);
 typedef Vector normal_func(void *, Vector);
+typedef Color color_func(Vector, Color, void *);
 
 typedef struct {
 	void *shape;
@@ -19,6 +20,8 @@ typedef struct {
 	double refl;
 	intersect_func *intersect;
 	normal_func *normal;
+	color_func *colorer;
+	void * color_params;
 } Scenery;
 
 typedef struct {
@@ -67,9 +70,10 @@ Color trace_reflection(Vector pos, Vector in_dir, Vector normal)
 	Vector refl_dir = vecsub(in_dir, vecscale(normal, 2 * incidence));
 	Ray refl_ray = {pos, refl_dir};
 	Observation reflected = observe(refl_ray);
-	if (!reflected.object)
+	Scenery *obj = reflected.object;
+	if (!obj)
 		return (Color){0, 0, 0};
-	return reflected.object->color;
+	return obj->colorer(reflected.pos, obj->color, obj->color_params);
 }
 
 Color trace(Ray ray)
@@ -78,14 +82,16 @@ Color trace(Ray ray)
 	if (observed.dist <= 0)
 		return (Color){0, 0, 0};
 
-	void *shape = observed.object->shape;
-	Color color = observed.object->color;
-	Vector objn = observed.object->normal(shape, observed.pos);
+	Scenery *obj = observed.object;
+
+	void *shape = obj->shape;
+	Color color = obj->colorer(observed.pos, obj->color, obj->color_params);
+	Vector objn = obj->normal(shape, observed.pos);
 	Vector light_dir = vecnormalise(vecsub(light_pos, observed.pos));
 
-	if (observed.object->refl > 0) {
+	if (obj->refl > 0) {
 		Color refl_color = trace_reflection(observed.pos, ray.dir, objn);
-		color = coloradd(color, refl_color, observed.object->refl);
+		color = coloradd(color, refl_color, obj->refl);
 	}
 
 	double diffuse = vecdot(light_dir, objn);
@@ -172,22 +178,36 @@ void draw(Color *frame, Ray view, double focal, int width, int height)
 	}
 }
 
+Color flat_color(Vector pos, Color color, void *_)
+{
+	return color;
+}
+
+Color floor_texture(Vector pos, Color color, void *params)
+{
+	double width = *(double *)params;
+	Color color2 = *(Color *)&(((double *)params)[1]);
+	if (((int) floor(pos.x / width)) % 2)
+		return color;
+	else
+		return color2;
+}
+
 #define add_sphere(C, Q, X, Y, Z, R) scene[scene_ctr++] = \
-	(Scenery){&(Sphere){{X, Y, Z}, R}, C, Q, &intersect_sphere, &normal_sphere}
+	(Scenery){&(Sphere){{X, Y, Z}, R}, C, Q, &intersect_sphere, &normal_sphere, &flat_color, NULL}
 
 #define add_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
 	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	C, Q, &intersect_plane, &normal_plane}
+	C, Q, &intersect_plane, &normal_plane, &flat_color, NULL}
 
 #define add_coplane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
 	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	C, Q, &intersect_coplane, &normal_plane}
+	C, Q, &intersect_coplane, &normal_plane, &flat_color, NULL}
 
 #define add_infinite_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) \
 	scene[scene_ctr++] = \
 	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	C, Q, &intersect_infinite_plane, &normal_plane}
-
+	C, Q, &intersect_infinite_plane, &normal_plane, &flat_color, NULL}
 
 int print_vector(Vector a)
 {
@@ -200,6 +220,7 @@ int main(void)
 	Color COLOR_GREEN = {0, 1, 0};
 	Color COLOR_BLUE = {0, 0, 1};
 	Color COLOR_BLACK = {0, 0, 0};
+	Color COLOR_WHITE = {1, 1, 1};
 	Color wallcolor = {1, 0.8, 0.4};
 	Color floorcolor = {0.3, 0.3, 0.35};
 
@@ -213,7 +234,13 @@ int main(void)
 	add_infinite_plane(wallcolor,  0.1,    0,  0, d*2,    0, 1, 0,    1, 0, 0);
 	add_infinite_plane(COLOR_RED,  0,   -d,  0,   0,    0, 1, 0,    0, 0, 1);
 	add_infinite_plane(COLOR_BLUE, 0,    d,  0,   0,    0, 1, 1,    0, 1, 0);
-	add_infinite_plane(floorcolor, 0,    0, -d,   0,    0, 0, 1,    1, 0, 0);
+
+	struct floor_params {
+		double width;
+		Color color2;
+	};
+	struct floor_params floorparams = {2, COLOR_WHITE};
+	scene[scene_ctr++] = (Scenery){&(Plane){{0, -d, 0}, {0, 0, 1}, {1, 0, 0}}, floorcolor, 0, &intersect_infinite_plane, &normal_plane, &floor_texture, &floorparams};
 
 	add_coplane(floorcolor, 0,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
 
