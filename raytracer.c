@@ -37,7 +37,7 @@ static size_t scene_ctr = 0;
 static Color ambient_light = {0.2, 0.2, 0.2};
 static Vector light_pos = {5, 5, 0};
 
-static double aa_threshhold = 0.0001;
+static double aa_threshhold = 0.001;
 
 Observation observe(Ray ray)
 {
@@ -187,10 +187,11 @@ Color floor_texture(Vector pos, Color color, void *params)
 {
 	double width = *(double *)params;
 	Color color2 = *(Color *)&(((double *)params)[1]);
-	if (((int) floor(pos.x / width)) % 2)
+	int odd_x = (((int) floor(pos.x / width)) % 2) != 0;
+	int odd_z = (((int) floor(pos.z / width)) % 2) != 0;
+	if (odd_x ^ odd_z == 1)
 		return color;
-	else
-		return color2;
+	return color2;
 }
 
 #define add_sphere(C, Q, X, Y, Z, R) scene[scene_ctr++] = \
@@ -220,6 +221,7 @@ int main(void)
 	Color COLOR_GREEN = {0, 1, 0};
 	Color COLOR_BLUE = {0, 0, 1};
 	Color COLOR_BLACK = {0, 0, 0};
+	Color COLOR_GREY = {0.4, 0.4, 0.4};
 	Color COLOR_WHITE = {1, 1, 1};
 	Color wallcolor = {1, 0.8, 0.4};
 	Color floorcolor = {0.3, 0.3, 0.35};
@@ -239,8 +241,8 @@ int main(void)
 		double width;
 		Color color2;
 	};
-	struct floor_params floorparams = {2, COLOR_WHITE};
-	scene[scene_ctr++] = (Scenery){&(Plane){{0, -d, 0}, {0, 0, 1}, {1, 0, 0}}, floorcolor, 0, &intersect_infinite_plane, &normal_plane, &floor_texture, &floorparams};
+	struct floor_params floorparams = {2, COLOR_GREY};
+	scene[scene_ctr++] = (Scenery){&(Plane){{0, -d, 0}, {0, 0, 1}, {1, 0, 0}}, COLOR_WHITE, 0, &intersect_infinite_plane, &normal_plane, &floor_texture, &floorparams};
 
 	add_coplane(floorcolor, 0,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
 
