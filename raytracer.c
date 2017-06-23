@@ -35,7 +35,7 @@ static Scenery scene[100];
 static size_t scene_ctr = 0;
 
 static Color ambient_light = {0.2, 0.2, 0.2};
-static Vector light_pos = {5, 5, 0};
+static Vector light_pos = {0, 50, -50};
 
 static double aa_threshhold = 0.001;
 
@@ -226,25 +226,28 @@ int main(void)
 	Color wallcolor = {1, 0.8, 0.4};
 	Color floorcolor = {0.3, 0.3, 0.35};
 
-	add_sphere(COLOR_BLACK, 0.9,    0, -3, 10,    2);
-	add_sphere(COLOR_GREEN, 0.9,    4,  4, 5,     1);
 
-	float d = 10;
-	float h = 2;
-	float r = d - h;
+	double p = 0;
+	double r = 1;
+	double b = sqrt(3) * r;
+	double b2 = sqrt(3) * r / 3;
+	double h = sqrt(2.0/3) * 2 * r;
 
-	add_infinite_plane(wallcolor,  0.1,    0,  0, d*2,    0, 1, 0,    1, 0, 0);
-	add_infinite_plane(COLOR_RED,  0,   -d,  0,   0,    0, 1, 0,    0, 0, 1);
-	add_infinite_plane(COLOR_BLUE, 0,    d,  0,   0,    0, 1, 1,    0, 1, 0);
+	add_sphere(COLOR_RED,   0.2,    0, 0,     p,    r);
+	add_sphere(COLOR_GREEN, 0.2,   -r, 0, p + b,    r);
+	add_sphere(COLOR_BLUE,  0.2,    r, 0, p + b,    r);
+	add_sphere(COLOR_BLACK,   1,    0, h, p + b2,   r);
+
+
+	add_infinite_plane(COLOR_WHITE, 0,    0,  1000,   10,    1, 0, 0,    0, 0, 1);
 
 	struct floor_params {
 		double width;
 		Color color2;
 	};
-	struct floor_params floorparams = {2, COLOR_GREY};
-	scene[scene_ctr++] = (Scenery){&(Plane){{0, -d, 0}, {0, 0, 1}, {1, 0, 0}}, COLOR_WHITE, 0, &intersect_infinite_plane, &normal_plane, &floor_texture, &floorparams};
+	struct floor_params floorparams = {0.7, COLOR_GREY};
+	scene[scene_ctr++] = (Scenery){&(Plane){{0, -r, 0}, {0, 0, 1}, {1, 0, 0}}, COLOR_WHITE, 0, &intersect_infinite_plane, &normal_plane, &floor_texture, &floorparams};
 
-	add_coplane(floorcolor, 0,    -h, d, r,    h*2, 0, 0,    0, 0, h*2);
 
 	Ray view = {{0, 0, -6}, {0, 0, 1}};
 	size_t width = 480;
@@ -256,7 +259,7 @@ int main(void)
 		return -1;
 	}
 
-	draw(frame, view, 1, width, height);
+	draw(frame, view, 2, width, height);
 
 	FILE *f = fopen("output.bmp", "wb");
 	writebitmap(f, frame, width, height);
