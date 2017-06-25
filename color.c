@@ -10,6 +10,15 @@ Color coloradd(Color a, Color b, double b_scale)
 	               a.blue  + b.blue * b_scale};
 }
 
+Color colorinterpolate(Color a, Color b, double t)
+{
+	return (Color){
+		a.red * (1 - t) + b.red * t,
+		a.green * (1 - t) + b.green * t,
+		a.blue * (1 - t) + b.blue * t,
+	};
+}
+
 Color phong(Color material, Color ambient, double diffuse, double specular)
 {
 	return (Color){(ambient.red   + diffuse) * material.red   + specular,

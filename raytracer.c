@@ -37,7 +37,11 @@ static size_t scene_ctr = 0;
 static Color ambient_light = {0.2, 0.2, 0.2};
 static Vector light_pos = {0, 50, -50};
 
-static double aa_threshhold = 0.001;
+static double fog_dist = 500;
+static double fog_depth = 1000;
+static Color fog_color = {0.8, 0.8, 0.8};
+
+static double aa_threshhold = 0.0001;
 
 Observation observe(Ray ray)
 {
@@ -72,15 +76,24 @@ Color trace_reflection(Vector pos, Vector in_dir, Vector normal)
 	Observation reflected = observe(refl_ray);
 	Scenery *obj = reflected.object;
 	if (!obj)
-		return (Color){0, 0, 0};
+		return fog_color;
 	return obj->colorer(reflected.pos, obj->color, obj->color_params);
+}
+
+
+Color apply_fog(Color col, double dist)
+{
+	if (dist <= fog_dist)
+		return col;
+	double t = (dist - fog_dist) / fog_depth;
+	return colorinterpolate(col, fog_color, t < 1 ? t : 1);
 }
 
 Color trace(Ray ray)
 {
 	Observation observed = observe(ray);
 	if (observed.dist <= 0)
-		return (Color){0, 0, 0};
+		return fog_color;
 
 	Scenery *obj = observed.object;
 
@@ -96,7 +109,7 @@ Color trace(Ray ray)
 
 	double diffuse = vecdot(light_dir, objn);
 	if (diffuse <= 0 || in_shadow(observed.pos, light_dir)) {
-		return phong(color, ambient_light, 0, 0);
+		return apply_fog(phong(color, ambient_light, 0, 0), observed.dist);
 	}
 
 	double spec = 0;
@@ -104,7 +117,7 @@ Color trace(Ray ray)
 	double specscale = vecdot(vecnormalise(specdir), vecscale(ray.dir, -1));
 	if (specscale < 0)
 		spec = pow(specscale, 30);
-	return phong(color, ambient_light, diffuse, spec);
+	return apply_fog(phong(color, ambient_light, diffuse, spec), observed.dist);
 }
 
 
@@ -238,8 +251,6 @@ int main(void)
 	add_sphere(COLOR_BLUE,  0.2,    r, 0, p + b,    r);
 	add_sphere(COLOR_BLACK,   1,    0, h, p + b2,   r);
 
-
-	add_infinite_plane(COLOR_WHITE, 0,    0,  1000,   10,    1, 0, 0,    0, 0, 1);
 
 	struct floor_params {
 		double width;
