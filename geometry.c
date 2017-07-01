@@ -6,21 +6,38 @@
 
 static const double epsilon = 0.001;
 
-double intersect_sphere(void *x, Vector pos, Vector dir)
+Vector ray_at_pos(Ray *ray, double t)
 {
-	Sphere *s = x;
-	Vector dist = vecsub(pos, s->center);
-	double dp = vecdot(dir, dist);
-	double to_rim_squared = vecdot(dist, dist) - s->radius * s->radius;
-	double delta = dp * dp - to_rim_squared;
+	return (Vector){
+		ray->pos.x + ray->dir.x * t,
+		ray->pos.y + ray->dir.y * t,
+		ray->pos.z + ray->dir.z * t,
+	};
+}
+
+
+Vector sphere_normal(Sphere *s, Vector *pos)
+{
+	Vector normal = vec_sub(pos, &s->center);
+	vec_normalise(&normal);
+	return normal;
+}
+
+
+double sphere_intersect(Sphere *s, Ray *ray)
+{
+	Vector dist = vec_sub(&ray->pos, &s->center);
+	double rim_dist_squared = vec_dot(&dist, &dist) - s->radius * s->radius;
+	double intersect_dist = vec_dot(&ray->dir, &dist);
+	double delta = intersect_dist * intersect_dist - rim_dist_squared;
 
 	// If beyond the rim
 	if (fabs(delta) < epsilon || delta < 0) {
 		return -1;
 	}
 
-	double t1 = -dp - sqrt(delta);
-	double t2 = -dp + sqrt(delta);
+	double t1 = -intersect_dist - sqrt(delta);
+	double t2 = -intersect_dist + sqrt(delta);
 	if (fabs(t1) < epsilon) {
 		if (t2 > 0) {
 			return t2;
@@ -34,58 +51,39 @@ double intersect_sphere(void *x, Vector pos, Vector dir)
 	return (t1 < t2) ? t1 : t2;
 }
 
-Vector normal_sphere(void *x, Vector pos)
+Vector plane_normal(Plane *p, Vector *pos)
 {
-	Sphere *s = x;
-	return vecnormalise(vecsub(pos, s->center));
+	Vector normal = vec_cross(&p->dir1, &p->dir2);
+	vec_normalise(&normal);
+	return normal;
 }
 
-double intersect_infinite_plane(void *x, Vector pos, Vector dir)
+double infplane_intersect(Plane *p, Ray *ray)
 {
-	Plane *p = x;
-	Vector n = normal_plane(p, pos);
-	Vector dist = vecsub(p->anchor, pos);
-	double dp = vecdot(dir, n);
+	Vector n = plane_normal(p, &ray->pos);
+	Vector dist = vec_sub(&p->anchor, &ray->pos);
+	double dp = vec_dot(&ray->dir, &n);
 	if (fabs(dp) < epsilon)
 		return -1;
-	double t = vecdot(dist, n) / dp;
+	double t = vec_dot(&dist, &n) / dp;
 	if (fabs(t) < epsilon)
 		return -1;
 	return t;
 }
 
-double intersect_plane(void *x, Vector pos, Vector dir)
+double plane_intersect(Plane *p, Ray *ray)
 {
-	Plane *p = x;
-	double t = intersect_infinite_plane(p, pos, dir);
-
-	Vector hdir = vecsub(vecadd(pos, vecscale(dir, t)), p->anchor);
-	double proj1_scale = vecdot(hdir, p->dir1);
-	if (proj1_scale < 0 || proj1_scale > vecdot(p->dir1, p->dir1))
+	double t = infplane_intersect(p, ray);
+	if (t < 0)
 		return -1;
-	double proj2_scale = vecdot(hdir, p->dir2);
-	if (proj2_scale < 0 || proj2_scale > vecdot(p->dir2, p->dir2))
+
+	Vector hit = ray_at_pos(ray, t);
+	Vector hdir = vec_sub(&hit, &p->anchor);
+	double proj1_scale = vec_dot(&ray->dir, &p->dir1);
+	if (proj1_scale < 0 || proj1_scale > vec_dot(&p->dir1, &p->dir1))
+		return -1;
+	double proj2_scale = vec_dot(&hdir, &p->dir2);
+	if (proj2_scale < 0 || proj2_scale > vec_dot(&p->dir2, &p->dir2))
 		return -1;
 	return t;
-}
-
-double intersect_coplane(void *x, Vector pos, Vector dir)
-{
-	Plane *p = x;
-	double t = intersect_infinite_plane(p, pos, dir);
-
-	Vector hdir = vecsub(vecadd(pos, vecscale(dir, t)), p->anchor);
-	double proj1_scale = vecdot(hdir, p->dir1);
-	if (proj1_scale < 0 || proj1_scale > vecdot(p->dir1, p->dir1))
-		return t;
-	double proj2_scale = vecdot(hdir, p->dir2);
-	if (proj2_scale < 0 || proj2_scale > vecdot(p->dir2, p->dir2))
-		return t;
-	return -1;
-}
-
-Vector normal_plane(void *x, Vector pos)
-{
-	Plane *p = x;
-	return vecnormalise(veccross(p->dir1, p->dir2));
 }
