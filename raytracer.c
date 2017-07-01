@@ -162,11 +162,6 @@ void draw(Colour *frame, Ray view, double focal, int width, int height)
 	}
 }
 
-Colour flat_colour(Vector pos, Colour colour, void *_)
-{
-	return colour;
-}
-
 Colour floor_texture(Vector pos, Colour colour, void *params)
 {
 	double width = *(double *)params;
