@@ -7,16 +7,18 @@
 static const double epsilon = 0.001;
 
 
-Vector sphere_normal(Sphere *s, Vector *pos)
+Vector sphere_normal(void *x, Vector *pos)
 {
+	Sphere *s = x;
 	Vector normal = vec_sub(pos, &s->center);
 	vec_normalise(&normal);
 	return normal;
 }
 
 
-double sphere_intersect(Sphere *s, Ray *ray)
+double sphere_intersect(void *x, Ray *ray)
 {
+	Sphere *s = x;
 	Vector dist = vec_sub(&ray->pos, &s->center);
 	double rim_dist_squared = vec_dot(&dist, &dist) - s->radius * s->radius;
 	double intersect_dist = vec_dot(&ray->dir, &dist);
@@ -42,15 +44,17 @@ double sphere_intersect(Sphere *s, Ray *ray)
 	return (t1 < t2) ? t1 : t2;
 }
 
-Vector plane_normal(Plane *p, Vector *pos)
+Vector plane_normal(void *x, Vector *pos)
 {
+	Plane *p = x;
 	Vector normal = vec_cross(&p->dir1, &p->dir2);
 	vec_normalise(&normal);
 	return normal;
 }
 
-double infplane_intersect(Plane *p, Ray *ray)
+double infplane_intersect(void *x, Ray *ray)
 {
+	Plane *p = x;
 	Vector n = plane_normal(p, &ray->pos);
 	Vector dist = vec_sub(&p->anchor, &ray->pos);
 	double dp = vec_dot(&ray->dir, &n);
@@ -62,8 +66,9 @@ double infplane_intersect(Plane *p, Ray *ray)
 	return t;
 }
 
-double plane_intersect(Plane *p, Ray *ray)
+double plane_intersect(void *x, Ray *ray)
 {
+	Plane *p = x;
 	double t = infplane_intersect(p, ray);
 	if (t < 0)
 		return -1;

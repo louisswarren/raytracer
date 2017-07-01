@@ -5,158 +5,129 @@
 #include <string.h>
 
 #include "vector.h"
-#include "color.h"
+#include "colour.h"
 #include "geometry.h"
+#include "scenery.h"
 #include "writebmp.h"
 
-
-typedef double intersect_func(void *, Vector, Vector);
-typedef Vector normal_func(void *, Vector);
-typedef Color color_func(Vector, Color, void *);
-
-typedef struct {
-	void *shape;
-	Color color;
-	double refl;
-	intersect_func *intersect;
-	normal_func *normal;
-	color_func *colorer;
-	void * color_params;
-} Scenery;
-
-typedef struct {
-	Scenery *object;
-	double dist;
-	Vector pos;
-} Observation;
+extern Scenery scene[100];
+extern size_t scene_ctr;
 
 
-static Scenery scene[100];
-static size_t scene_ctr = 0;
-
-static Color ambient_light = {0.2, 0.2, 0.2};
+static Colour ambient_light = {0.2, 0.2, 0.2};
 static Vector light_pos = {0, 50, -50};
 
 static double fog_dist = 500;
 static double fog_depth = 1000;
-static Color fog_color = {0.8, 0.8, 0.8};
+static Colour fog_colour = {0.8, 0.8, 0.8};
 
 static double aa_threshhold = 0.0001;
-
-Observation observe(Ray ray)
-{
-	size_t argmin_dist;
-	double dist, min_dist = -1;
-	for (size_t i = 0; i < scene_ctr; i++) {
-		dist = scene[i].intersect(scene[i].shape, ray.pos, ray.dir);
-		if (dist > 0 && (min_dist < 0 || dist < min_dist)) {
-			min_dist = dist;
-			argmin_dist = i;
-		}
-	}
-	if (min_dist < 0)
-		return (Observation){NULL, -1, {0, 0, 0}};
-	Vector pos = vecadd(ray.pos, vecscale(ray.dir, min_dist));
-	return (Observation){&scene[argmin_dist], min_dist, pos};
-}
 
 int in_shadow(Vector pos, Vector light_dir)
 {
 	Ray shadow_ray = {pos, light_dir};
-	Observation shade = observe(shadow_ray);
-	double dist_to_light = vecmagnitude(vecsub(light_pos, pos));
+	Observation shade = scene_observe(shadow_ray);
+	Vector light_relative_dir = vec_sub(&light_pos, &pos);
+	double dist_to_light = vec_magnitude(&light_relative_dir);
 	return (shade.dist > 0 && shade.dist < dist_to_light);
 }
 
-Color trace_reflection(Vector pos, Vector in_dir, Vector normal)
+Colour trace_reflection(Vector pos, Vector in_dir, Vector normal)
 {
-	double incidence = vecdot(normal, in_dir);
-	Vector refl_dir = vecsub(in_dir, vecscale(normal, 2 * incidence));
+	double incidence = vec_dot(&normal, &in_dir);
+	Vector n_2i = vec_scaled(&normal, 2 * incidence);
+	Vector refl_dir = vec_sub(&in_dir, &n_2i);
 	Ray refl_ray = {pos, refl_dir};
-	Observation reflected = observe(refl_ray);
+	Observation reflected = scene_observe(refl_ray);
 	Scenery *obj = reflected.object;
 	if (!obj)
-		return fog_color;
-	return obj->colorer(reflected.pos, obj->color, obj->color_params);
+		return fog_colour;
+	return obj->colourer(reflected.pos, obj->colour, obj->colour_params);
 }
 
 
-Color apply_fog(Color col, double dist)
+Colour apply_fog(Colour col, double dist)
 {
 	if (dist <= fog_dist)
 		return col;
 	double t = (dist - fog_dist) / fog_depth;
-	return colorinterpolate(col, fog_color, t < 1 ? t : 1);
+	return colour_interpolate(&col, &fog_colour, t < 1 ? t : 1);
 }
 
-Color trace(Ray ray)
+Colour trace(Ray ray)
 {
-	Observation observed = observe(ray);
+	Observation observed = scene_observe(ray);
 	if (observed.dist <= 0)
-		return fog_color;
+		return fog_colour;
 
 	Scenery *obj = observed.object;
 
 	void *shape = obj->shape;
-	Color color = obj->colorer(observed.pos, obj->color, obj->color_params);
+	Colour colour = obj->colourer(observed.pos, obj->colour, obj->colour_params);
 	Vector objn = obj->normal(shape, observed.pos);
-	Vector light_dir = vecnormalise(vecsub(light_pos, observed.pos));
+	Vector light_dir = vec_sub(&light_pos, &observed.pos);
+	vec_normalise(&light_dir);
 
 	if (obj->refl > 0) {
-		Color refl_color = trace_reflection(observed.pos, ray.dir, objn);
-		color = coloradd(color, refl_color, obj->refl);
+		Colour refl_colour = trace_reflection(observed.pos, ray.dir, objn);
+		colour = colour_combine(&colour, &refl_colour, obj->refl);
 	}
 
-	double diffuse = vecdot(light_dir, objn);
+	double diffuse = vec_dot(&light_dir, &objn);
 	if (diffuse <= 0 || in_shadow(observed.pos, light_dir)) {
-		return apply_fog(phong(color, ambient_light, 0, 0), observed.dist);
+		return apply_fog(colour_phong(&colour, &ambient_light, 0, 0), observed.dist);
 	}
 
 	double spec = 0;
-	Vector specdir = vecsub(vecscale(objn, 2 * diffuse), light_dir);
-	double specscale = vecdot(vecnormalise(specdir), vecscale(ray.dir, -1));
+	Vector objn_2diff = vec_scaled(&objn, 2 * diffuse);
+	Vector specdir = vec_sub(&objn_2diff, &light_dir);
+	vec_normalise(&specdir);
+	Vector spec_neg_ray_dir = vec_scaled(&ray.dir, -1);
+	double specscale = vec_dot(&specdir, &spec_neg_ray_dir);
 	if (specscale < 0)
 		spec = pow(specscale, 30);
-	return apply_fog(phong(color, ambient_light, diffuse, spec), observed.dist);
+	return apply_fog(colour_phong(&colour, &ambient_light, diffuse, spec), observed.dist);
 }
 
 
-Color multisample_pixel(int level, Ray ray, double pixel_size)
+Colour multisample_pixel(int level, Ray ray, double pixel_size)
 {
 	double subpixel_size = pixel_size / level;
-	Color col = {0, 0, 0};
+	Colour col = {0, 0, 0};
 	for (int i = 0; i < level; i++) {
 		for (int j = 0; j < level; j++) {
 			Vector subpos = {(i + 0.5 - level / 2) * subpixel_size,
 			                 (j + 0.5 - level / 2) * subpixel_size,
 			                 0};
-			Ray subray = {ray.pos, vecnormalise(vecadd(ray.dir, subpos))};
-			Color sample = trace(subray);
-			col.red += sample.red;
-			col.green += sample.green;
-			col.blue += sample.blue;
+			Vector new_dir = vec_add(&ray.dir, &subpos);
+			vec_normalise(&new_dir);
+			Ray subray = {ray.pos, new_dir};
+			Colour sample = trace(subray);
+			col.r += sample.r;
+			col.g += sample.g;
+			col.b += sample.b;
 		}
 	}
-	col.red /= level * level;
-	col.green /= level * level;
-	col.blue /= level * level;
+	col.r /= level * level;
+	col.g /= level * level;
+	col.b /= level * level;
 	return col;
 }
 
 
-int pixel_needs_aa(Color *frame, int h, int w, int width)
+int pixel_needs_aa(Colour *frame, int h, int w, int width)
 {
-	Color p = frame[h * width + w];
-	Color n[4] = {
+	Colour p = frame[h * width + w];
+	Colour n[4] = {
 		frame[(h - 1) * width + w],
 		frame[(h + 1) * width + w],
 		frame[h * width + w - 1],
 		frame[h * width + w + 1],
 	};
-	return (colorvariance(p, n, 4) > aa_threshhold);
+	return (colour_variance(&p, n, 4) > aa_threshhold);
 }
 
-void draw(Color *frame, Ray view, double focal, int width, int height)
+void draw(Colour *frame, Ray view, double focal, int width, int height)
 {
 	double pixel_size = width > height ? 2.0 / width : 2.0 / height;
 
@@ -166,7 +137,7 @@ void draw(Color *frame, Ray view, double focal, int width, int height)
 			double y = (h + 0.5 - height / 2) * pixel_size;
 
 			Vector pixel_dir = {x, y, focal}; // This ignores view.dir !!!
-			Ray ray = {view.pos, vecnormalise(pixel_dir)};
+			Ray ray = {view.pos, vec_normalised(&pixel_dir)};
 			frame[h * width + w] = trace(ray);
 		}
 	}
@@ -182,7 +153,7 @@ void draw(Color *frame, Ray view, double focal, int width, int height)
 				double y = (h + 0.5 - height / 2) * pixel_size;
 
 				Vector pixel_dir = {x, y, focal}; // This ignores view.dir !!!
-				Ray ray = {view.pos, vecnormalise(pixel_dir)};
+				Ray ray = {view.pos, vec_normalised(&pixel_dir)};
 				frame[h * width + w] = multisample_pixel(4, ray, pixel_size);
 			} else {
 				frame[h * width + w] = frame[h * width + w];
@@ -191,37 +162,33 @@ void draw(Color *frame, Ray view, double focal, int width, int height)
 	}
 }
 
-Color flat_color(Vector pos, Color color, void *_)
+Colour flat_colour(Vector pos, Colour colour, void *_)
 {
-	return color;
+	return colour;
 }
 
-Color floor_texture(Vector pos, Color color, void *params)
+Colour floor_texture(Vector pos, Colour colour, void *params)
 {
 	double width = *(double *)params;
-	Color color2 = *(Color *)&(((double *)params)[1]);
+	Colour colour2 = *(Colour *)&(((double *)params)[1]);
 	int odd_x = (((int) floor(pos.x / width)) % 2) != 0;
 	int odd_z = (((int) floor(pos.z / width)) % 2) != 0;
 	if (odd_x ^ odd_z == 1)
-		return color;
-	return color2;
+		return colour;
+	return colour2;
 }
 
 #define add_sphere(C, Q, X, Y, Z, R) scene[scene_ctr++] = \
-	(Scenery){&(Sphere){{X, Y, Z}, R}, C, Q, &intersect_sphere, &normal_sphere, &flat_color, NULL}
+	(Scenery){&(Sphere){{X, Y, Z}, R}, C, Q, &sphere_intersect, &sphere_normal, &flat_colour, NULL}
 
 #define add_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
 	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	C, Q, &intersect_plane, &normal_plane, &flat_color, NULL}
-
-#define add_coplane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
-	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	C, Q, &intersect_coplane, &normal_plane, &flat_color, NULL}
+	C, Q, &plane_intersect, &plane_normal, &flat_colour, NULL}
 
 #define add_infinite_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) \
 	scene[scene_ctr++] = \
 	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	C, Q, &intersect_infinite_plane, &normal_plane, &flat_color, NULL}
+	C, Q, &infplane_intersect, &plane_normal, &flat_colour, NULL}
 
 int print_vector(Vector a)
 {
@@ -230,14 +197,14 @@ int print_vector(Vector a)
 
 int main(void)
 {
-	Color COLOR_RED = {1, 0, 0};
-	Color COLOR_GREEN = {0, 1, 0};
-	Color COLOR_BLUE = {0, 0, 1};
-	Color COLOR_BLACK = {0, 0, 0};
-	Color COLOR_GREY = {0.4, 0.4, 0.4};
-	Color COLOR_WHITE = {1, 1, 1};
-	Color wallcolor = {1, 0.8, 0.4};
-	Color floorcolor = {0.3, 0.3, 0.35};
+	Colour colour_RED = {1, 0, 0};
+	Colour colour_GREEN = {0, 1, 0};
+	Colour colour_BLUE = {0, 0, 1};
+	Colour colour_BLACK = {0, 0, 0};
+	Colour colour_GREY = {0.4, 0.4, 0.4};
+	Colour colour_WHITE = {1, 1, 1};
+	Colour wallcolour = {1, 0.8, 0.4};
+	Colour floorcolour = {0.3, 0.3, 0.35};
 
 
 	double p = 0;
@@ -246,25 +213,25 @@ int main(void)
 	double b2 = sqrt(3) * r / 3;
 	double h = sqrt(2.0/3) * 2 * r;
 
-	add_sphere(COLOR_RED,   0.2,    0, 0,     p,    r);
-	add_sphere(COLOR_GREEN, 0.2,   -r, 0, p + b,    r);
-	add_sphere(COLOR_BLUE,  0.2,    r, 0, p + b,    r);
-	add_sphere(COLOR_BLACK,   1,    0, h, p + b2,   r);
+	add_sphere(colour_RED,   0.2,    0, 0,     p,    r);
+	add_sphere(colour_GREEN, 0.2,   -r, 0, p + b,    r);
+	add_sphere(colour_BLUE,  0.2,    r, 0, p + b,    r);
+	add_sphere(colour_BLACK,   1,    0, h, p + b2,   r);
 
 
 	struct floor_params {
 		double width;
-		Color color2;
+		Colour colour2;
 	};
-	struct floor_params floorparams = {0.7, COLOR_GREY};
-	scene[scene_ctr++] = (Scenery){&(Plane){{0, -r, 0}, {0, 0, 1}, {1, 0, 0}}, COLOR_WHITE, 0, &intersect_infinite_plane, &normal_plane, &floor_texture, &floorparams};
+	struct floor_params floorparams = {0.7, colour_GREY};
+	scene[scene_ctr++] = (Scenery){&(Plane){{0, -r, 0}, {0, 0, 1}, {1, 0, 0}}, colour_WHITE, 0, &infplane_intersect, &plane_normal, &floor_texture, &floorparams};
 
 
 	Ray view = {{0, 0, -6}, {0, 0, 1}};
 	size_t width = 480;
 	size_t height = 480;
 
-	Color *frame = malloc(width * height * sizeof(Color));
+	Colour *frame = malloc(width * height * sizeof(Colour));
 	if (!frame) {
 		puts("Out of memory");
 		return -1;
