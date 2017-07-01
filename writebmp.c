@@ -3,11 +3,11 @@
 #include <stdio.h>
 #include <float.h>
 
-#include "color.h"
+#include "colour.h"
 #include "writebmp.h"
 
 typedef struct {
-	uint8_t blue, green, red;
+	uint8_t b, g, r;
 } bmppix;
 
 static int writefileheader(FILE *f, size_t fsize)
@@ -52,16 +52,16 @@ static int writeinfoheader(FILE *f, size_t width, size_t height)
 	return 40;
 }
 
-static bmppix color_to_bmppix(Color x)
+static bmppix colour_to_bmppix(Colour x)
 {
 	bmppix y;
-	y.red   = x.red   > 1 ? 255 : (x.red   - DBL_EPSILON) * 256;
-	y.green = x.green > 1 ? 255 : (x.green - DBL_EPSILON) * 256;
-	y.blue  = x.blue  > 1 ? 255 : (x.blue  - DBL_EPSILON) * 256;
+	y.r = x.r > 1 ? 255 : (x.r - DBL_EPSILON) * 256;
+	y.g = x.g > 1 ? 255 : (x.g - DBL_EPSILON) * 256;
+	y.b = x.b > 1 ? 255 : (x.b - DBL_EPSILON) * 256;
 	return y;
 }
 
-int writebitmap(FILE *f, Color img[], size_t width, size_t height)
+int writebitmap(FILE *f, Colour img[], size_t width, size_t height)
 {
 	uint32_t fsize = 14 + 40 + width * height * 3;
 	char pad[4] = {0, 0, 0, 0};
@@ -72,7 +72,7 @@ int writebitmap(FILE *f, Color img[], size_t width, size_t height)
 
 	for (size_t y = 0; y < height; y++) {
 		for (size_t x = 0; x < width; x++) {
-			bmppix pixel = color_to_bmppix(img[y * width + x]);
+			bmppix pixel = colour_to_bmppix(img[y * width + x]);
 			fwrite(&pixel, 3, 1, f);
 		}
 		if (pad_len)
