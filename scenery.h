@@ -20,3 +20,7 @@ typedef struct {
 
 
 Observation scene_observe(Ray ray);
+
+Scenery *add_sphere(Colour, double, double, double, double, double);
+Scenery *add_plane(Colour, double, double, double, double, double, double, double, double, double, double);
+Scenery *add_infplane(Colour, double, double, double, double, double, double, double, double, double, double);

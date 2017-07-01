@@ -178,17 +178,6 @@ Colour floor_texture(Vector pos, Colour colour, void *params)
 	return colour2;
 }
 
-#define add_sphere(C, Q, X, Y, Z, R) scene[scene_ctr++] = \
-	(Scenery){&(Sphere){{X, Y, Z}, R}, C, Q, &sphere_intersect, &sphere_normal, &flat_colour, NULL}
-
-#define add_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) scene[scene_ctr++] = \
-	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	C, Q, &plane_intersect, &plane_normal, &flat_colour, NULL}
-
-#define add_infinite_plane(C, Q, X, Y, Z, U1, U2, U3, W1, W2, W3) \
-	scene[scene_ctr++] = \
-	(Scenery){&(Plane){{X, Y, Z}, {U1, U2, U3}, {W1, W2, W3}}, \
-	C, Q, &infplane_intersect, &plane_normal, &flat_colour, NULL}
 
 int print_vector(Vector a)
 {
@@ -224,7 +213,9 @@ int main(void)
 		Colour colour2;
 	};
 	struct floor_params floorparams = {0.7, colour_GREY};
-	scene[scene_ctr++] = (Scenery){&(Plane){{0, -r, 0}, {0, 0, 1}, {1, 0, 0}}, colour_WHITE, 0, &infplane_intersect, &plane_normal, &floor_texture, &floorparams};
+	Scenery *floor = add_infplane(colour_WHITE, 0, 0, -r, 0, 0, 0, 1, 1, 0, 0);
+	floor->colourer = &floor_texture;
+	floor->colour_params = &floorparams;
 
 
 	Ray view = {{0, 0, -6}, {0, 0, 1}};
