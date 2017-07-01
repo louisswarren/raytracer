@@ -11,6 +11,16 @@ Vector vec_add(Vector *this, Vector *other)
 	};
 }
 
+Vector ray_at_param(Ray *ray, double dist)
+{
+	return (Vector){
+		ray->pos.x + ray->dir.x * dist,
+		ray->pos.y + ray->dir.y * dist,
+		ray->pos.z + ray->dir.z * dist,
+	};
+}
+
+
 Vector vec_sub(Vector *this, Vector *other)
 {
 	return (Vector){

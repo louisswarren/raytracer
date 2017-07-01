@@ -6,15 +6,6 @@
 
 static const double epsilon = 0.001;
 
-Vector ray_at_pos(Ray *ray, double t)
-{
-	return (Vector){
-		ray->pos.x + ray->dir.x * t,
-		ray->pos.y + ray->dir.y * t,
-		ray->pos.z + ray->dir.z * t,
-	};
-}
-
 
 Vector sphere_normal(Sphere *s, Vector *pos)
 {
@@ -77,7 +68,7 @@ double plane_intersect(Plane *p, Ray *ray)
 	if (t < 0)
 		return -1;
 
-	Vector hit = ray_at_pos(ray, t);
+	Vector hit = ray_at_param(ray, t);
 	Vector hdir = vec_sub(&hit, &p->anchor);
 	double proj1_scale = vec_dot(&ray->dir, &p->dir1);
 	if (proj1_scale < 0 || proj1_scale > vec_dot(&p->dir1, &p->dir1))

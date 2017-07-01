@@ -9,6 +9,8 @@ typedef struct {
 
 Vector vec_add(Vector *this, Vector *other);
 
+Vector ray_at_param(Ray *ray, double dist);
+
 Vector vec_sub(Vector *this, Vector *other);
 
 void vec_scale(Vector *this, double s);
