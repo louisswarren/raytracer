@@ -7,16 +7,20 @@ typedef struct {
 	Vector dir;
 } Ray;
 
-Vector vecadd(Vector a, Vector b);
+Vector vec_add(Vector *this, Vector *other);
 
-Vector vecsub(Vector a, Vector b);
+Vector vec_sub(Vector *this, Vector *other);
 
-Vector vecscale(Vector a, double s);
+void vec_scale(Vector *this, double s);
 
-double vecdot(Vector a, Vector b);
+Vector vec_scaled(Vector *this, double s);
 
-double vecmagnitude(Vector a);
+double vec_dot(Vector *this, Vector *other);
 
-Vector vecnormalise(Vector a);
+double vec_magnitude(Vector *this);
 
-Vector veccross(Vector a, Vector b);
+void vec_normalise(Vector *this);
+
+Vector vec_normalised(Vector *this);
+
+Vector vec_cross(Vector *this, Vector *other);

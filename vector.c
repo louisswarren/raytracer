@@ -2,39 +2,65 @@
 
 #include "vector.h"
 
-Vector vecadd(Vector a, Vector b)
+Vector vec_add(Vector *this, Vector *other)
 {
-	return (Vector){a.x + b.x, a.y + b.y, a.z + b.z};
+	return (Vector){
+		this->x + other->x,
+		this->y + other->y,
+		this->z + other->z,
+	};
 }
 
-Vector vecsub(Vector a, Vector b)
+Vector vec_sub(Vector *this, Vector *other)
 {
-	return (Vector){a.x - b.x, a.y - b.y, a.z - b.z};
+	return (Vector){
+		this->x - other->x,
+		this->y - other->y,
+		this->z - other->z,
+	};
 }
 
-Vector vecscale(Vector a, double s)
+void vec_scale(Vector *this, double s)
 {
-	return (Vector){a.x * s, a.y * s, a.z * s};
+	this->x *= s;
+	this->y *= s;
+	this->z *= s;
 }
 
-double vecdot(Vector a, Vector b)
+Vector vec_scaled(Vector *this, double s)
 {
-	return a.x * b.x + a.y * b.y + a.z * b.z;
+	return (Vector){
+		this->x * s,
+		this->y * s,
+		this->z * s,
+	};
 }
 
-double vecmagnitude(Vector a)
+double vec_dot(Vector *this, Vector *other)
 {
-	return sqrt(vecdot(a, a));
+	return (this->x * other->x) + (this->y * other->y) + (this->z * other->z);
 }
 
-Vector vecnormalise(Vector a)
+double vec_magnitude(Vector *this)
 {
-	return vecscale(a, 1/vecmagnitude(a));
+	return sqrt(vec_dot(this, this));
 }
 
-Vector veccross(Vector a, Vector b)
+void vec_normalise(Vector *this)
 {
-	return (Vector){a.y * b.z - a.z * b.y,
-	               -a.x * b.z + a.z * b.x,
-	                a.x * b.y - a.y * b.x};
+	vec_scale(this, 1/vec_magnitude(this));
+}
+
+Vector vec_normalised(Vector *this)
+{
+	return vec_scaled(this, 1/vec_magnitude(this));
+}
+
+Vector vec_cross(Vector *this, Vector *other)
+{
+	return (Vector){
+		this->y * other->z - this->z * other->y,
+		this->z * other->x - this->x * other->z,
+		this->x * other->y - this->y * other->x,
+	};
 }
