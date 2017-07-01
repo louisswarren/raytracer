@@ -1,6 +1,5 @@
 .PHONY: default
-default: raytracer.o
-
+default: run
 
 .PHONY: run
 run: raytracer

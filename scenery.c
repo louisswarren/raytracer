@@ -12,7 +12,7 @@ Observation scene_observe(Ray ray)
 	size_t argmin_dist;
 	double dist, min_dist = -1;
 	for (size_t i = 0; i < scene_ctr; i++) {
-		dist = scene[i].intersect(scene[i].shape, ray.pos, ray.dir);
+		dist = scene[i].intersect(scene[i].shape, &ray);
 		if (dist > 0 && (min_dist < 0 || dist < min_dist)) {
 			min_dist = dist;
 			argmin_dist = i;

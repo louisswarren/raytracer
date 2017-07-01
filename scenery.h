@@ -1,5 +1,5 @@
-typedef double intersect_func(void *, Vector, Vector);
-typedef Vector normal_func(void *, Vector);
+typedef double intersect_func(void *, Ray *);
+typedef Vector normal_func(void *, Vector *);
 typedef Colour colour_func(Vector, Colour, void *);
 
 typedef struct {

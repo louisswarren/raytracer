@@ -64,7 +64,7 @@ Colour trace(Ray ray)
 
 	void *shape = obj->shape;
 	Colour colour = obj->colourer(observed.pos, obj->colour, obj->colour_params);
-	Vector objn = obj->normal(shape, observed.pos);
+	Vector objn = obj->normal(shape, &observed.pos);
 	Vector light_dir = vec_sub(&light_pos, &observed.pos);
 	vec_normalise(&light_dir);
 
