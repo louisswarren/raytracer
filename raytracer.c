@@ -1,7 +1,8 @@
 #include <math.h>
+#include <omp.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
 
 #include "vector.h"
@@ -131,6 +132,7 @@ void draw(Colour *frame, Ray view, double focal, int width, int height)
 {
 	double pixel_size = width > height ? 2.0 / width : 2.0 / height;
 
+	#pragma omp parallel for
 	for (int w = 0; w < width; w++) {
 		for (int h = 0; h < height; h++) {
 			double x = (w + 0.5 - width  / 2) * pixel_size;
@@ -146,6 +148,7 @@ void draw(Colour *frame, Ray view, double focal, int width, int height)
 		return;
 
 	int aa_level = 4;
+	#pragma omp parallel for
 	for (int w = 1; w < width - 1; w++) {
 		for (int h = 1; h < height - 1; h++) {
 			if (pixel_needs_aa(frame, h, w, width)) {

@@ -10,7 +10,7 @@ clean:
 	rm *.o raytracer
 
 CC = gcc
-CFLAGS = -lm -std=c99 -pedantic
+CFLAGS = -fopenmp -lm -std=c99 -pedantic
 
 raytracer: raytracer.o colour.o geometry.o scenery.o vector.o writebmp.o
 	$(CC) $(CFLAGS) -o $@ $^
