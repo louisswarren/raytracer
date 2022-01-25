@@ -47,12 +47,13 @@ Colour trace_reflection(Vector pos, Vector in_dir, Vector normal)
 }
 
 
-Colour apply_fog(Colour col, double dist)
+void
+apply_fog(Colour *col, double dist)
 {
-	if (dist <= fog_dist)
-		return col;
-	double t = (dist - fog_dist) / fog_depth;
-	return colour_interpolate(&col, &fog_colour, t < 1 ? t : 1);
+	if (dist > fog_dist) {
+		double t = (dist - fog_dist) / fog_depth;
+		colour_interpolate(&col, fog_colour, t < 1 ? t : 1);
+	}
 }
 
 Colour trace(Ray ray)
@@ -71,12 +72,14 @@ Colour trace(Ray ray)
 
 	if (obj->refl > 0) {
 		Colour refl_colour = trace_reflection(observed.pos, ray.dir, objn);
-		colour = colour_combine(&colour, &refl_colour, obj->refl);
+		colour_combine(&colour, refl_colour, obj->refl);
 	}
 
 	double diffuse = vec_dot(&light_dir, &objn);
 	if (diffuse <= 0 || in_shadow(observed.pos, light_dir)) {
-		return apply_fog(colour_phong(&colour, &ambient_light, 0, 0), observed.dist);
+		colour_phong(&colour, ambient_light, 0, 0);
+		apply_fog(&colour, observed.dist);
+		return colour;
 	}
 
 	double spec = 0;
@@ -87,7 +90,9 @@ Colour trace(Ray ray)
 	double specscale = vec_dot(&specdir, &spec_neg_ray_dir);
 	if (specscale < 0)
 		spec = pow(specscale, 30);
-	return apply_fog(colour_phong(&colour, &ambient_light, diffuse, spec), observed.dist);
+	colour_phong(&colour, ambient_light, diffuse, spec);
+	apply_fog(&colour, observed.dist);
+	return colour;
 }
 
 
@@ -125,7 +130,7 @@ int pixel_needs_aa(Colour *frame, int h, int w, int width)
 		frame[h * width + w - 1],
 		frame[h * width + w + 1],
 	};
-	return (colour_variance(&p, n, 4) > aa_threshhold);
+	return (colour_variance(p, n, 4) > aa_threshhold);
 }
 
 void draw(Colour *frame, Ray view, double focal, int width, int height)
