@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
 
 #include "vector.h"
 #include "colour.h"
 #include "geometry.h"
 #include "scenery.h"
-#include "writebmp.h"
 
 extern Scenery scene[100];
 extern size_t scene_ctr;
@@ -228,8 +228,22 @@ int main(void)
 
 	draw(frame, view, 2, width, height);
 
-	FILE *f = fopen("output.bmp", "wb");
-	writebitmap(f, frame, width, height);
+	FILE *f = fopen("output.ppm", "wb");
+	unsigned char pr, pg, pb;
+	fprintf(f, "P6\n");
+	fprintf(f, "%d %d\n", width, height);
+	fprintf(f, "255\n");
+	for (int h = height - 1; h >= 0; --h) {
+		for (int w = 0; w < width; ++w) {
+			Colour x = frame[h * width + w];
+			pr = x.r > 1 ? 255 : (x.r - DBL_EPSILON) * 256;
+			pg = x.g > 1 ? 255 : (x.g - DBL_EPSILON) * 256;
+			pb = x.b > 1 ? 255 : (x.b - DBL_EPSILON) * 256;
+			fwrite(&pr, 1, 1, f);
+			fwrite(&pg, 1, 1, f);
+			fwrite(&pb, 1, 1, f);
+		}
+	}
 	fclose(f);
 	free(frame);
 }
