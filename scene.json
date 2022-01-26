@@ -1,0 +1,43 @@
+{
+	"objects": [
+		{
+			"type":	"sphere",
+			"colour":	"#FF0000",
+			"pos":	[0.0, 0.0, 0.0],
+			"radius":	1,
+			"refl":	0.2
+		},
+		{
+			"type":	"sphere",
+			"colour":	"#00FF00",
+			"pos":	[-1.0, 0.0, 1.732],
+			"radius":	1,
+			"refl":	0.2
+		},
+		{
+			"type":	"sphere",
+			"colour":	"#0000FF",
+			"pos":	[1.0, 0.0, 1.732],
+			"radius":	1,
+			"refl":	0.2
+		},
+		{
+			"type":	"sphere",
+			"colour":	"#000000",
+			"pos":	[0, 1.633, 0.577],
+			"radius":	1,
+			"refl":	1
+		},
+		{
+			"type":	"infplane",
+			"texture":	{
+				"file": "floor.ppm",
+				"scale": 1.4
+				},
+			"pos":	[0, -1, 0],
+			"normal":	[0, 1, 0],
+			"refl":	0
+		}
+	]
+}
+
