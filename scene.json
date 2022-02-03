@@ -9,7 +9,7 @@
 },
 "lighting": {
 	"colour":	"#333333",
-	"pos":	[0, 50, -50]
+	"position":	[0, 50, -50]
 },
 "fog": {
 	"colour":	"#cccccc",
