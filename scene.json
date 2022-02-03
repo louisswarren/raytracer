@@ -1,43 +1,62 @@
 {
-	"objects": [
-		{
-			"type":	"sphere",
-			"colour":	"#FF0000",
-			"pos":	[0.0, 0.0, 0.0],
-			"radius":	1,
-			"refl":	0.2
-		},
-		{
-			"type":	"sphere",
-			"colour":	"#00FF00",
-			"pos":	[-1.0, 0.0, 1.732],
-			"radius":	1,
-			"refl":	0.2
-		},
-		{
-			"type":	"sphere",
-			"colour":	"#0000FF",
-			"pos":	[1.0, 0.0, 1.732],
-			"radius":	1,
-			"refl":	0.2
-		},
-		{
-			"type":	"sphere",
-			"colour":	"#000000",
-			"pos":	[0, 1.633, 0.577],
-			"radius":	1,
-			"refl":	1
-		},
-		{
-			"type":	"infplane",
-			"texture":	{
-				"file": "floor.ppm",
-				"scale": 1.4
-				},
-			"pos":	[0, -1, 0],
-			"normal":	[0, 1, 0],
-			"refl":	0
-		}
-	]
+"image": {
+	"width":	1024,
+	"height":	1024
+},
+"perspective": {
+	"position":	[0, 0, -6],
+	"direction":	[0, 0, 1]
+},
+"lighting": {
+	"colour":	"#333333",
+	"pos":	[0, 50, -50]
+},
+"fog": {
+	"colour":	"#cccccc",
+	"distance":	500,
+	"depth":	1000
+},
+"antialiasing": {
+	"threshhold":	0.0001
+},
+"objects": [
+	{
+		"type":	"sphere",
+		"colour":	"#FF0000",
+		"pos":	[0.0, 0.0, 0.0],
+		"radius":	1,
+		"refl":	0.2
+	},
+	{
+		"type":	"sphere",
+		"colour":	"#00FF00",
+		"pos":	[-1.0, 0.0, 1.732],
+		"radius":	1,
+		"refl":	0.2
+	},
+	{
+		"type":	"sphere",
+		"colour":	"#0000FF",
+		"pos":	[1.0, 0.0, 1.732],
+		"radius":	1,
+		"refl":	0.2
+	},
+	{
+		"type":	"sphere",
+		"colour":	"#000000",
+		"pos":	[0, 1.633, 0.577],
+		"radius":	1,
+		"refl":	1
+	},
+	{
+		"type":	"infplane",
+		"texture":	{
+			"file": "floor.ppm",
+			"scale": 1.4
+			},
+		"pos":	[0, -1, 0],
+		"normal":	[0, 1, 0],
+		"refl":	0
+	}
+]
 }
-
