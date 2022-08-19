@@ -1,5 +1,9 @@
 .PHONY: default
-default: run
+default: test
+
+.PHONY: test
+test: output.bmp
+	sha1sum -c test.sha1
 
 .PHONY: run
 run: raytracer
