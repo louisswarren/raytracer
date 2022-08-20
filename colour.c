@@ -38,5 +38,5 @@ double colour_variance(Colour *expected, Colour samples[], size_t n)
 		sum += pow(expected->g - samples[i].g, 2);
 		sum += pow(expected->b - samples[i].b, 2);
 	}
-	return sum / (3 * n);
+	return sum / (double)(3 * n);
 }

@@ -1,1 +1,1 @@
-int writebitmap(FILE *f, Colour img[], size_t width, size_t height);
+int writebitmap(FILE *f, Colour img[], uint32_t width, uint32_t height);

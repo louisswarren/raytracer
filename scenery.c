@@ -10,7 +10,7 @@ size_t scene_ctr = 0;
 
 Observation scene_observe(Ray ray)
 {
-	size_t argmin_dist;
+	size_t argmin_dist = 0;
 	double dist, min_dist = -1;
 	for (size_t i = 0; i < scene_ctr; i++) {
 		dist = scene[i].intersect(scene[i].shape, &ray);
@@ -28,6 +28,8 @@ Observation scene_observe(Ray ray)
 
 static Colour flat_colour(Vector pos, Colour colour, void *_)
 {
+	(void)pos;
+	(void)_;
 	return colour;
 }
 
@@ -39,6 +41,8 @@ Scenery *add_sphere(col, refl, x, y, z, radius)
 {
 	Scenery *scenery = &scene[scene_ctr++];
 	scenery->shape = malloc(sizeof(Sphere));
+	if (!scenery->shape)
+		return NULL;
 
 	*(Sphere *)scenery->shape = (Sphere){(Vector){x, y, z}, radius};
 	scenery->colour = col;

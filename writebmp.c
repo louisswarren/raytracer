@@ -10,7 +10,9 @@ typedef struct {
 	uint8_t b, g, r;
 } bmppix;
 
-static int writefileheader(FILE *f, size_t fsize)
+static
+int
+writefileheader(FILE *f, uint32_t fsize)
 {
 	char     bfType[2]   = {'B', 'M'};
 	uint32_t bfSize      = fsize;
@@ -25,7 +27,9 @@ static int writefileheader(FILE *f, size_t fsize)
 	return 14;
 }
 
-static int writeinfoheader(FILE *f, size_t width, size_t height)
+static
+int
+writeinfoheader(FILE *f, uint32_t width, uint32_t height)
 {
 	uint32_t biSize          = 40;
 	uint32_t biWidth         = width;
@@ -52,16 +56,19 @@ static int writeinfoheader(FILE *f, size_t width, size_t height)
 	return 40;
 }
 
-static bmppix colour_to_bmppix(Colour x)
+static
+bmppix
+colour_to_bmppix(Colour x)
 {
 	bmppix y;
-	y.r = x.r > 1 ? 255 : (x.r - DBL_EPSILON) * 256;
-	y.g = x.g > 1 ? 255 : (x.g - DBL_EPSILON) * 256;
-	y.b = x.b > 1 ? 255 : (x.b - DBL_EPSILON) * 256;
+	y.r = x.r > 1 ? 255 : (uint8_t)((x.r - DBL_EPSILON) * 256);
+	y.g = x.g > 1 ? 255 : (uint8_t)((x.g - DBL_EPSILON) * 256);
+	y.b = x.b > 1 ? 255 : (uint8_t)((x.b - DBL_EPSILON) * 256);
 	return y;
 }
 
-int writebitmap(FILE *f, Colour img[], size_t width, size_t height)
+int
+writebitmap(FILE *f, Colour img[], uint32_t width, uint32_t height)
 {
 	uint32_t fsize = 14 + 40 + width * height * 3;
 	char pad[4] = {0, 0, 0, 0};

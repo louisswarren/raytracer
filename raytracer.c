@@ -24,7 +24,9 @@ static Colour fog_colour = {0.8, 0.8, 0.8};
 
 static double aa_threshhold = 0.0001;
 
-int in_shadow(Vector pos, Vector light_dir)
+static
+int
+in_shadow(Vector pos, Vector light_dir)
 {
 	Ray shadow_ray = {pos, light_dir};
 	Observation shade = scene_observe(shadow_ray);
@@ -33,7 +35,9 @@ int in_shadow(Vector pos, Vector light_dir)
 	return (shade.dist > 0 && shade.dist < dist_to_light);
 }
 
-Colour trace_reflection(Vector pos, Vector in_dir, Vector normal)
+static
+Colour
+trace_reflection(Vector pos, Vector in_dir, Vector normal)
 {
 	double incidence = vec_dot(&normal, &in_dir);
 	Vector n_2i = vec_scaled(&normal, 2 * incidence);
@@ -47,7 +51,9 @@ Colour trace_reflection(Vector pos, Vector in_dir, Vector normal)
 }
 
 
-Colour apply_fog(Colour col, double dist)
+static
+Colour
+apply_fog(Colour col, double dist)
 {
 	if (dist <= fog_dist)
 		return col;
@@ -55,7 +61,9 @@ Colour apply_fog(Colour col, double dist)
 	return colour_interpolate(&col, &fog_colour, t < 1 ? t : 1);
 }
 
-Colour trace(Ray ray)
+static
+Colour
+trace(Ray ray)
 {
 	Observation observed = scene_observe(ray);
 	if (observed.dist <= 0)
@@ -91,7 +99,9 @@ Colour trace(Ray ray)
 }
 
 
-Colour multisample_pixel(int level, Ray ray, double pixel_size)
+static
+Colour
+multisample_pixel(int level, Ray ray, double pixel_size)
 {
 	double subpixel_size = pixel_size / level;
 	Colour col = {0, 0, 0};
@@ -115,8 +125,9 @@ Colour multisample_pixel(int level, Ray ray, double pixel_size)
 	return col;
 }
 
-
-int pixel_needs_aa(Colour *frame, int h, int w, int width)
+static
+int
+pixel_needs_aa(Colour *frame, int h, int w, int width)
 {
 	Colour p = frame[h * width + w];
 	Colour n[4] = {
@@ -128,15 +139,17 @@ int pixel_needs_aa(Colour *frame, int h, int w, int width)
 	return (colour_variance(&p, n, 4) > aa_threshhold);
 }
 
-void draw(Colour *frame, Ray view, double focal, int width, int height)
+static
+void
+draw(Colour *frame, Ray view, double focal, int width, int height)
 {
-	double pixel_size = width > height ? 2.0 / width : 2.0 / height;
+	double pixel_size = width > height ? 2.0 / (double)width : 2.0 / (double)height;
 
 	#pragma omp parallel for
 	for (int w = 0; w < width; w++) {
 		for (int h = 0; h < height; h++) {
-			double x = (w + 0.5 - width  / 2) * pixel_size;
-			double y = (h + 0.5 - height / 2) * pixel_size;
+			double x = ((double)w + 0.5 - width  / 2) * pixel_size;
+			double y = ((double)h + 0.5 - height / 2) * pixel_size;
 
 			Vector pixel_dir = {x, y, focal}; // This ignores view.dir !!!
 			Ray ray = {view.pos, vec_normalised(&pixel_dir)};
@@ -147,7 +160,7 @@ void draw(Colour *frame, Ray view, double focal, int width, int height)
 	if (aa_threshhold < 0)
 		return;
 
-	int aa_level = 4;
+	// int aa_level = 4;
 	#pragma omp parallel for
 	for (int w = 1; w < width - 1; w++) {
 		for (int h = 1; h < height - 1; h++) {
@@ -165,7 +178,9 @@ void draw(Colour *frame, Ray view, double focal, int width, int height)
 	}
 }
 
-Colour floor_texture(Vector pos, Colour colour, void *params)
+static
+Colour
+floor_texture(Vector pos, Colour colour, void *params)
 {
 	double width = *(double *)params;
 	Colour colour2 = *(Colour *)&(((double *)params)[1]);
@@ -176,13 +191,17 @@ Colour floor_texture(Vector pos, Colour colour, void *params)
 	return colour2;
 }
 
-
-int print_vector(Vector a)
+/*
+static
+int
+print_vector(Vector a)
 {
 	return printf("(%f, %f, %f)\n", a.x, a.y, a.z);
 }
+*/
 
-int main(void)
+int
+main(void)
 {
 	Colour colour_RED = {1, 0, 0};
 	Colour colour_GREEN = {0, 1, 0};
@@ -190,8 +209,8 @@ int main(void)
 	Colour colour_BLACK = {0, 0, 0};
 	Colour colour_GREY = {0.4, 0.4, 0.4};
 	Colour colour_WHITE = {1, 1, 1};
-	Colour wallcolour = {1, 0.8, 0.4};
-	Colour floorcolour = {0.3, 0.3, 0.35};
+	//Colour wallcolour = {1, 0.8, 0.4};
+	//Colour floorcolour = {0.3, 0.3, 0.35};
 
 
 	double p = 0;
@@ -217,8 +236,8 @@ int main(void)
 
 
 	Ray view = {{0, 0, -6}, {0, 0, 1}};
-	size_t width = 480;
-	size_t height = 480;
+	uint32_t width = 480;
+	uint32_t height = 480;
 
 	Colour *frame = malloc(width * height * sizeof(Colour));
 	if (!frame) {
@@ -226,7 +245,7 @@ int main(void)
 		return -1;
 	}
 
-	draw(frame, view, 2, width, height);
+	draw(frame, view, 2, (int)width, (int)height);
 
 	FILE *f = fopen("output.bmp", "wb");
 	writebitmap(f, frame, width, height);

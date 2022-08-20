@@ -46,6 +46,7 @@ double sphere_intersect(void *x, Ray *ray)
 
 Vector plane_normal(void *x, Vector *pos)
 {
+	(void)pos;
 	Plane *p = x;
 	Vector normal = vec_cross(&p->dir1, &p->dir2);
 	vec_normalise(&normal);
