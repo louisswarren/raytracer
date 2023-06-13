@@ -1,28 +1,19 @@
-typedef struct {
+struct vector {
 	double x, y, z;
-} Vector;
+};
 
-typedef struct {
-	Vector pos;
-	Vector dir;
-} Ray;
+struct ray {
+	struct vector pos;
+	struct vector dir;
+};
 
-Vector vec_add(Vector *this, Vector *other);
+double dotv(const struct vector *u, const struct vector *v);
+double normv(const struct vector *u);
 
-Vector ray_at_param(Ray *ray, double dist);
+void addv(struct vector *u, const struct vector *v);
+void subv(struct vector *u, const struct vector *v);
+void mulv(struct vector *u, double s);
 
-Vector vec_sub(Vector *this, Vector *other);
-
-void vec_scale(Vector *this, double s);
-
-Vector vec_scaled(Vector *this, double s);
-
-double vec_dot(Vector *this, Vector *other);
-
-double vec_magnitude(Vector *this);
-
-void vec_normalise(Vector *this);
-
-Vector vec_normalised(Vector *this);
-
-Vector vec_cross(Vector *this, Vector *other);
+void normalisev(struct vector *u);
+void crossv(struct vector *u, const struct vector *v);
+void alongv(struct vector *u, const struct vector *v, double t);

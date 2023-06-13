@@ -2,75 +2,62 @@
 
 #include "vector.h"
 
-Vector vec_add(Vector *this, Vector *other)
+void
+addv(struct vector *u, const struct vector *v)
 {
-	return (Vector){
-		this->x + other->x,
-		this->y + other->y,
-		this->z + other->z,
-	};
+	u->x += v->x;
+	u->y += v->y;
+	u->z += v->z;
 }
 
-Vector ray_at_param(Ray *ray, double dist)
+void
+subv(struct vector *u, const struct vector *v)
 {
-	return (Vector){
-		ray->pos.x + ray->dir.x * dist,
-		ray->pos.y + ray->dir.y * dist,
-		ray->pos.z + ray->dir.z * dist,
-	};
+	u->x -= v->x;
+	u->y -= v->y;
+	u->z -= v->z;
 }
 
-
-Vector vec_sub(Vector *this, Vector *other)
+void
+mulv(struct vector *u, double s)
 {
-	return (Vector){
-		this->x - other->x,
-		this->y - other->y,
-		this->z - other->z,
-	};
+	u->x *= s;
+	u->y *= s;
+	u->z *= s;
 }
 
-void vec_scale(Vector *this, double s)
+void
+alongv(struct vector *u, const struct vector *v, double t)
 {
-	this->x *= s;
-	this->y *= s;
-	this->z *= s;
+	u->x += v->x * t;
+	u->y += v->y * t;
+	u->z += v->z * t;
 }
 
-Vector vec_scaled(Vector *this, double s)
+double
+dotv(const struct vector *u, const struct vector *v)
 {
-	return (Vector){
-		this->x * s,
-		this->y * s,
-		this->z * s,
-	};
+	return (u->x * v->x) +
+	       (u->y * v->y) +
+	       (u->z * v->z);
 }
 
-double vec_dot(Vector *this, Vector *other)
+double
+normv(const struct vector *u)
 {
-	return (this->x * other->x) + (this->y * other->y) + (this->z * other->z);
+	return sqrt(dotv(u, u));
 }
 
-double vec_magnitude(Vector *this)
+void
+normalisev(struct vector *u)
 {
-	return sqrt(vec_dot(this, this));
+	mulv(u, 1.0 / normv(u));
 }
 
-void vec_normalise(Vector *this)
+void
+crossv(struct vector *u, const struct vector *v)
 {
-	vec_scale(this, 1/vec_magnitude(this));
-}
-
-Vector vec_normalised(Vector *this)
-{
-	return vec_scaled(this, 1/vec_magnitude(this));
-}
-
-Vector vec_cross(Vector *this, Vector *other)
-{
-	return (Vector){
-		this->y * other->z - this->z * other->y,
-		this->z * other->x - this->x * other->z,
-		this->x * other->y - this->y * other->x,
-	};
+	u->x = u->y * v->z - u->z * v->y;
+	u->y = u->z * v->x - u->x * v->z;
+	u->z = u->x * v->y - u->y * v->x;
 }

@@ -7,21 +7,25 @@
 static const double epsilon = 0.001;
 
 
-Vector sphere_normal(void *x, Vector *pos)
+struct vector
+geo_sphere_normal(const void *x, const struct vector *pos)
 {
-	Sphere *s = x;
-	Vector normal = vec_sub(pos, &s->center);
-	vec_normalise(&normal);
+	const struct geo_sphere *s = x;
+	struct vector normal = *pos;
+	subv(&normal, &s->center);
+	normalisev(&normal);
 	return normal;
 }
 
 
-double sphere_intersect(void *x, Ray *ray)
+double
+geo_sphere_intersect(const void *x, const struct ray *ray)
 {
-	Sphere *s = x;
-	Vector dist = vec_sub(&ray->pos, &s->center);
-	double rim_dist_squared = vec_dot(&dist, &dist) - s->radius * s->radius;
-	double intersect_dist = vec_dot(&ray->dir, &dist);
+	const struct geo_sphere *s = x;
+	struct vector dist = ray->pos;
+	subv(&dist, &s->center);
+	double rim_dist_squared = dotv(&dist, &dist) - s->radius * s->radius;
+	double intersect_dist = dotv(&ray->dir, &dist);
 	double delta = intersect_dist * intersect_dist - rim_dist_squared;
 
 	// If beyond the rim
@@ -44,43 +48,50 @@ double sphere_intersect(void *x, Ray *ray)
 	return (t1 < t2) ? t1 : t2;
 }
 
-Vector plane_normal(void *x, Vector *pos)
+struct vector
+geo_plane_normal(const void *x, const struct vector *pos)
 {
 	(void)pos;
-	Plane *p = x;
-	Vector normal = vec_cross(&p->dir1, &p->dir2);
-	vec_normalise(&normal);
+	const struct geo_plane *p = x;
+	struct vector normal = p->dir1;
+	crossv(&normal, &p->dir2);
+	normalisev(&normal);
 	return normal;
 }
 
-double infplane_intersect(void *x, Ray *ray)
+double
+geo_infplane_intersect(const void *x, const struct ray *ray)
 {
-	Plane *p = x;
-	Vector n = plane_normal(p, &ray->pos);
-	Vector dist = vec_sub(&p->anchor, &ray->pos);
-	double dp = vec_dot(&ray->dir, &n);
+	const struct geo_plane *p = x;
+	struct vector n = geo_plane_normal(p, &ray->pos);
+	struct vector dist = p->anchor;
+	subv(&dist, &ray->pos);
+
+	double dp = dotv(&ray->dir, &n);
 	if (fabs(dp) < epsilon)
 		return -1;
-	double t = vec_dot(&dist, &n) / dp;
+	double t = dotv(&dist, &n) / dp;
 	if (fabs(t) < epsilon)
 		return -1;
 	return t;
 }
 
-double plane_intersect(void *x, Ray *ray)
+double
+geo_plane_intersect(const void *x, const struct ray *ray)
 {
-	Plane *p = x;
-	double t = infplane_intersect(p, ray);
+	const struct geo_plane *p = x;
+	double t = geo_infplane_intersect(p, ray);
 	if (t < 0)
 		return -1;
 
-	Vector hit = ray_at_param(ray, t);
-	Vector hdir = vec_sub(&hit, &p->anchor);
-	double proj1_scale = vec_dot(&ray->dir, &p->dir1);
-	if (proj1_scale < 0 || proj1_scale > vec_dot(&p->dir1, &p->dir1))
+	struct vector h = ray->pos;
+	alongv(&h, &ray->dir, t);
+	subv(&h, &p->anchor);
+	double proj1_scale = dotv(&ray->dir, &p->dir1);
+	if (proj1_scale < 0 || proj1_scale > dotv(&p->dir1, &p->dir1))
 		return -1;
-	double proj2_scale = vec_dot(&hdir, &p->dir2);
-	if (proj2_scale < 0 || proj2_scale > vec_dot(&p->dir2, &p->dir2))
+	double proj2_scale = dotv(&h, &p->dir2);
+	if (proj2_scale < 0 || proj2_scale > dotv(&p->dir2, &p->dir2))
 		return -1;
 	return t;
 }

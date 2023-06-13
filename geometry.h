@@ -1,20 +1,15 @@
-typedef struct {
-	Vector center;
+struct geo_sphere {
+	struct vector center;
 	double radius;
-} Sphere;
+};
+struct vector geo_sphere_normal(const void *x, const struct vector *pos);
+double geo_sphere_intersect(const void *x, const struct ray *ray);
 
-typedef struct {
-	Vector anchor;
-	Vector dir1, dir2;
-} Plane;
-
-Vector sphere_normal(void *x, Vector *pos);
-
-double sphere_intersect(void *x, Ray *ray);
-
-Vector plane_normal(void *x, Vector *pos);
-
-double infplane_intersect(void *x, Ray *ray);
-
-double plane_intersect(void *x, Ray *ray);
+struct geo_plane {
+	struct vector anchor;
+	struct vector dir1, dir2;
+};
+struct vector geo_plane_normal(const void *x, const struct vector *pos);
+double geo_infplane_intersect(const void *x, const struct ray *ray);
+double geo_plane_intersect(const void *x, const struct ray *ray);
 
